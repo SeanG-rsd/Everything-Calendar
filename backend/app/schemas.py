@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
@@ -33,14 +34,19 @@ class Token(BaseModel):
 # --- Modules ---
 
 
+ModuleCategory = Literal["list", "totals"]
+
+
 class ModuleCreate(BaseModel):
     name: str
+    category: ModuleCategory
     schema_definition: dict = {}
     is_active: bool = True
 
 
 class ModuleUpdate(BaseModel):
     name: str | None = None
+    category: ModuleCategory | None = None
     schema_definition: dict | None = None
     is_active: bool | None = None
 
@@ -51,6 +57,7 @@ class ModuleOut(BaseModel):
     id: int
     user_id: int
     name: str
+    category: str
     schema_definition: dict
     is_active: bool
     created_at: datetime

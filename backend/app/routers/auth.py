@@ -7,6 +7,15 @@ from app.database import get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+_DEFAULT_MODULES: tuple[tuple[str, str], ...] = (
+    ("To-Dos", "list"),
+    ("Homework", "list"),
+    ("Long-Term Goals", "list"),
+    ("Daily Diet", "totals"),
+    ("Daily Goals", "totals"),
+    ("Daily Workout", "totals"),
+)
+
 
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def register(payload: schemas.UserRegister, db: Session = Depends(get_db)):
@@ -18,6 +27,11 @@ def register(payload: schemas.UserRegister, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    for name, category in _DEFAULT_MODULES:
+        db.add(models.Module(user_id=user.id, name=name, category=category, schema_definition={}))
+    db.commit()
+
     return user
 
 

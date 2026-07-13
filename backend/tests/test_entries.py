@@ -2,7 +2,9 @@ from tests.conftest import register_and_login
 
 
 def _create_module(client, headers, name="Fitness"):
-    return client.post("/api/modules", json={"name": name}, headers=headers).json()
+    return client.post(
+        "/api/modules", json={"name": name, "category": "list"}, headers=headers
+    ).json()
 
 
 def test_create_and_get_entry(client, auth_headers):
