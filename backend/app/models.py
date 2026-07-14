@@ -36,6 +36,7 @@ class Module(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     category: Mapped[str] = mapped_column(String, nullable=False)
     schema_definition: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    # TODO: remove — no longer settable from the app since the Manage tab was removed.
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False

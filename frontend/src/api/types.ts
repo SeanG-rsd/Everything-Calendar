@@ -22,13 +22,6 @@ export interface Module {
   created_at: string;
 }
 
-export interface ModuleUpdate {
-  name?: string;
-  category?: ModuleCategory;
-  schema_definition?: Record<string, unknown>;
-  is_active?: boolean;
-}
-
 export interface Entry {
   id: number;
   module_id: number;

@@ -20,7 +20,7 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.replace('/modules');
+      router.replace('/tasks');
     } catch (err) {
       setError((err as ApiError).detail);
     } finally {
@@ -33,7 +33,7 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await loginAsDevUser();
-      router.replace('/modules');
+      router.replace('/tasks');
     } catch (err) {
       setError((err as ApiError).detail);
     } finally {

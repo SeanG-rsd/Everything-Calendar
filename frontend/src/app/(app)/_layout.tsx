@@ -1,10 +1,11 @@
 import { useAuth } from '@/auth/useAuth';
 import { Spinner } from '@/components/ui/Spinner';
-import { Redirect, Stack } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { ModulesProvider } from '@/modules/ModulesContext';
+import { Redirect, Slot } from 'expo-router';
+import { View } from 'react-native';
 
 export default function AppLayout() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -19,16 +20,8 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerRight: () => (
-          <Pressable onPress={logout} hitSlop={8}>
-            <Text className="text-sm font-medium text-slate-900">Log out</Text>
-          </Pressable>
-        ),
-      }}>
-      <Stack.Screen name="modules/index" options={{ title: 'Modules' }} />
-      <Stack.Screen name="modules/[id]" options={{ title: 'Entries' }} />
-    </Stack>
+    <ModulesProvider>
+      <Slot />
+    </ModulesProvider>
   );
 }

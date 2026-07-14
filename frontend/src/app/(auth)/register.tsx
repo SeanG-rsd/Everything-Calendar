@@ -20,7 +20,7 @@ export default function RegisterScreen() {
     setSubmitting(true);
     try {
       await register(email, password);
-      router.replace('/modules');
+      router.replace('/tasks');
     } catch (err) {
       setError((err as ApiError).detail);
     } finally {

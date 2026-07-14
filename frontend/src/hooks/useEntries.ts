@@ -4,7 +4,7 @@ import type { ApiError } from '../api/client';
 import type { Entry, EntryCreate, EntryUpdate } from '../api/types';
 
 interface UseEntriesOptions {
-  moduleId: number;
+  moduleId: number | undefined;
   status?: string;
   limit?: number;
   offset?: number;
@@ -16,6 +16,11 @@ export function useEntries({ moduleId, status, limit = 20, offset = 0 }: UseEntr
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
+    if (moduleId == null) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -33,6 +38,7 @@ export function useEntries({ moduleId, status, limit = 20, offset = 0 }: UseEntr
 
   const create = useCallback(
     async (payload: Omit<EntryCreate, 'module_id'>) => {
+      if (moduleId == null) throw new Error('Cannot create an entry before its module has loaded.');
       const created = await entriesApi.createEntry({ ...payload, module_id: moduleId });
       await refetch();
       return created;

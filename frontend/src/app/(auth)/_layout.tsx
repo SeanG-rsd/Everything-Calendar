@@ -15,7 +15,7 @@ export default function AuthLayout() {
   }
 
   if (user) {
-    return <Redirect href="/modules" />;
+    return <Redirect href="/tasks" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

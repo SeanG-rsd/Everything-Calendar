@@ -100,7 +100,9 @@ def test_list_entries_filters_by_module_and_status(client, auth_headers):
     assert len(by_module) == 1
     assert by_module[0]["module_id"] == module_a["id"]
 
-    by_status = client.get("/api/entries", params={"status": "done"}, headers=auth_headers).json()
+    by_status = client.get(
+        "/api/entries", params={"module_id": module_a["id"], "status": "done"}, headers=auth_headers
+    ).json()
     assert len(by_status) == 1
     assert by_status[0]["status"] == "done"
 
@@ -125,11 +127,11 @@ def test_list_entries_pagination(client, auth_headers):
 
 def test_list_entries_excludes_other_users_entries(client, auth_headers):
     module = _create_module(client, auth_headers)
-    client.post(
+    created = client.post(
         "/api/entries", json={"module_id": module["id"], "payload": {}}, headers=auth_headers
-    )
+    ).json()
 
     other_headers = register_and_login(client, "bob@example.com")
     response = client.get("/api/entries", headers=other_headers)
     assert response.status_code == 200
-    assert response.json() == []
+    assert all(entry["id"] != created["id"] for entry in response.json())

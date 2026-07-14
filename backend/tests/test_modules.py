@@ -129,4 +129,5 @@ def test_registration_seeds_default_modules(client):
         "Daily Diet": "totals",
         "Daily Goals": "totals",
         "Daily Workout": "totals",
+        "Savings Goals": "totals",
     }
