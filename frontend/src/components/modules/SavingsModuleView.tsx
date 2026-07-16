@@ -10,7 +10,7 @@ import { ErrorBanner } from '../ui/ErrorBanner';
 import { Modal } from '../ui/Modal';
 import { ProgressRing } from '../ui/ProgressRing';
 import { Spinner } from '../ui/Spinner';
-import { AddFundsForm } from './AddFundsForm';
+import { FundsAdjustmentForm } from './FundsAdjustmentForm';
 import { SavingsGoalForm, type SavingsGoalValues } from './SavingsGoalForm';
 
 const MODULE_NAME = 'Savings Goals';
@@ -41,6 +41,7 @@ export function SavingsModuleView() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [fundingTarget, setFundingTarget] = useState<Entry | null>(null);
+  const [fundingDirection, setFundingDirection] = useState<'add' | 'subtract'>('add');
   const [fundingError, setFundingError] = useState<string | null>(null);
 
   const [pageError, setPageError] = useState<string | null>(null);
@@ -92,11 +93,12 @@ export function SavingsModuleView() {
     }
   }
 
-  async function handleAddFunds(amount: number) {
+  async function handleFundsAdjustment(amount: number) {
     if (!fundingTarget) return;
     const current = typeof fundingTarget.payload.current === 'number' ? fundingTarget.payload.current : 0;
     const target = typeof fundingTarget.payload.target === 'number' ? fundingTarget.payload.target : 0;
-    const next = Math.min(target, current + amount);
+    const signedAmount = fundingDirection === 'add' ? amount : -amount;
+    const next = Math.max(0, Math.min(target, current + signedAmount));
     try {
       await update(fundingTarget.id, { payload: { ...fundingTarget.payload, current: next } });
       setFundingTarget(null);
@@ -155,14 +157,26 @@ export function SavingsModuleView() {
                   />
                 </View>
                 <View className="mt-2 flex-row items-center justify-between">
-                  <Button
-                    variant="secondary"
-                    onPress={() => {
-                      setFundingError(null);
-                      setFundingTarget(item);
-                    }}>
-                    Add funds
-                  </Button>
+                  <View className="flex-row gap-2">
+                    <Button
+                      variant="secondary"
+                      onPress={() => {
+                        setFundingError(null);
+                        setFundingDirection('add');
+                        setFundingTarget(item);
+                      }}>
+                      Add funds
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onPress={() => {
+                        setFundingError(null);
+                        setFundingDirection('subtract');
+                        setFundingTarget(item);
+                      }}>
+                      Subtract
+                    </Button>
+                  </View>
                   <Pressable onPress={() => setDeleteTarget(item)} hitSlop={8}>
                     <Text className="text-xs text-red-600">Delete</Text>
                   </Pressable>
@@ -183,9 +197,12 @@ export function SavingsModuleView() {
         </Modal>
       )}
       {fundingTarget && (
-        <Modal title={`Add funds — ${goalTitle(fundingTarget)}`} onClose={() => setFundingTarget(null)}>
-          <AddFundsForm
-            onSubmit={handleAddFunds}
+        <Modal
+          title={`${fundingDirection === 'add' ? 'Add' : 'Subtract'} funds — ${goalTitle(fundingTarget)}`}
+          onClose={() => setFundingTarget(null)}>
+          <FundsAdjustmentForm
+            mode={fundingDirection}
+            onSubmit={handleFundsAdjustment}
             onCancel={() => setFundingTarget(null)}
             submitError={fundingError}
           />

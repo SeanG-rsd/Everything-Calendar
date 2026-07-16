@@ -43,9 +43,48 @@ _DEFAULT_ENTRIES: dict[str, tuple[dict, ...]] = {
         {"status": "active", "payload": {"title": "Drink water", "target": 8, "current": 6, "unit": "cups"}},
     ),
     "Daily Workout": (
-        {"status": "active", "payload": {"title": "Push-ups", "target": 50, "current": 30, "unit": "reps"}},
-        {"status": "active", "payload": {"title": "Running", "target": 5, "current": 2, "unit": "km"}},
-        {"status": "active", "payload": {"title": "Plank", "target": 5, "current": 5, "unit": "min"}},
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Push", "title": "Bench Press", "targetSets": 3, "targetReps": 8},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Push", "title": "Overhead Press", "targetSets": 3, "targetReps": 8},
+        },
+        {
+            "status": "active",
+            "payload": {
+                "kind": "template",
+                "day": "Push",
+                "title": "Triceps Pushdown",
+                "targetSets": 3,
+                "targetReps": 12,
+            },
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Pull", "title": "Deadlift", "targetSets": 3, "targetReps": 5},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Pull", "title": "Pull-ups", "targetSets": 3, "targetReps": 8},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Pull", "title": "Barbell Row", "targetSets": 3, "targetReps": 8},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Legs", "title": "Squat", "targetSets": 3, "targetReps": 5},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Legs", "title": "Leg Press", "targetSets": 3, "targetReps": 10},
+        },
+        {
+            "status": "active",
+            "payload": {"kind": "template", "day": "Legs", "title": "Calf Raise", "targetSets": 3, "targetReps": 15},
+        },
     ),
     "Savings Goals": (
         {"status": "active", "payload": {"title": "Emergency Fund", "target": 5000, "current": 1200}},

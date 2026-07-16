@@ -4,13 +4,14 @@ import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { TextField } from '../ui/TextField';
 
-interface AddFundsFormProps {
+interface FundsAdjustmentFormProps {
+  mode: 'add' | 'subtract';
   onSubmit: (amount: number) => Promise<void>;
   onCancel: () => void;
   submitError?: string | null;
 }
 
-export function AddFundsForm({ onSubmit, onCancel, submitError }: AddFundsFormProps) {
+export function FundsAdjustmentForm({ mode, onSubmit, onCancel, submitError }: FundsAdjustmentFormProps) {
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,7 +32,7 @@ export function AddFundsForm({ onSubmit, onCancel, submitError }: AddFundsFormPr
     <View className="gap-4">
       <ErrorBanner message={submitError} />
       <TextField
-        label="Amount to add ($)"
+        label={`Amount to ${mode} ($)`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="numeric"
@@ -43,7 +44,7 @@ export function AddFundsForm({ onSubmit, onCancel, submitError }: AddFundsFormPr
           Cancel
         </Button>
         <Button onPress={handleSubmit} disabled={submitting || !valid}>
-          Add
+          {mode === 'add' ? 'Add' : 'Subtract'}
         </Button>
       </View>
     </View>
