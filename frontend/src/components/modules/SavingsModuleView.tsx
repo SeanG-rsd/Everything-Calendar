@@ -1,7 +1,8 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
+import { getModuleAccentKey } from '@/theme/moduleAccent';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -14,6 +15,8 @@ import { FundsAdjustmentForm } from './FundsAdjustmentForm';
 import { SavingsGoalForm, type SavingsGoalValues } from './SavingsGoalForm';
 
 const MODULE_NAME = 'Savings Goals';
+const accentKey = getModuleAccentKey(MODULE_NAME);
+const accentClasses = moduleClassNames[accentKey];
 
 function goalProgress(entry: Entry): number {
   const target = entry.payload.target;
@@ -49,7 +52,7 @@ export function SavingsModuleView() {
 
   if (modulesLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
+      <View className="flex-1 items-center justify-center bg-background">
         <Spinner />
       </View>
     );
@@ -57,7 +60,7 @@ export function SavingsModuleView() {
 
   if (modulesError || !module) {
     return (
-      <View className="flex-1 gap-4 bg-slate-50 p-4">
+      <View className="flex-1 gap-4 bg-background p-4">
         <ErrorBanner message={modulesError ?? `"${MODULE_NAME}" module isn't set up yet.`} />
       </View>
     );
@@ -89,7 +92,7 @@ export function SavingsModuleView() {
       }
       setFormOpen(false);
     } catch (err) {
-      setFormError((err as ApiError).detail);
+      setFormError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -103,7 +106,7 @@ export function SavingsModuleView() {
       await update(fundingTarget.id, { payload: { ...fundingTarget.payload, current: next } });
       setFundingTarget(null);
     } catch (err) {
-      setFundingError((err as ApiError).detail);
+      setFundingError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -113,25 +116,27 @@ export function SavingsModuleView() {
       await remove(deleteTarget.id);
       setDeleteTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
   return (
-    <View className="flex-1 bg-slate-50 p-4">
+    <View className="flex-1 bg-background p-4">
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-slate-900">Savings Goals</Text>
-        <Button onPress={openCreate}>Add goal</Button>
+        <Text className={`text-xl font-semibold ${accentClasses.text}`}>Savings Goals</Text>
+        <Button accent={accentKey} onPress={openCreate}>
+          Add goal
+        </Button>
       </View>
       <View className="mb-4 items-center">
-        <ProgressRing progress={overallProgress} label="overall" />
+        <ProgressRing progress={overallProgress} label="overall" accent={accentKey} />
       </View>
       <ErrorBanner message={error} />
       <ErrorBanner message={pageError} />
       {loading ? (
         <Spinner />
       ) : entries.length === 0 ? (
-        <Text className="text-sm text-slate-500">No savings goals yet — add one above.</Text>
+        <Text className="text-sm text-ink-muted">No savings goals yet — add one above.</Text>
       ) : (
         <FlatList
           data={entries}
@@ -141,18 +146,18 @@ export function SavingsModuleView() {
             const target = typeof item.payload.target === 'number' ? item.payload.target : 0;
             const current = typeof item.payload.current === 'number' ? item.payload.current : 0;
             return (
-              <View className="rounded-md border border-slate-200 bg-white p-3">
+              <View className="rounded-md border border-border bg-surface p-3">
                 <Pressable
                   onPress={() => openEdit(item)}
                   className="mb-2 flex-row items-center justify-between">
-                  <Text className="font-medium text-slate-900">{goalTitle(item)}</Text>
-                  <Text className="text-xs text-slate-500">
+                  <Text className="font-medium text-ink">{goalTitle(item)}</Text>
+                  <Text className="text-xs text-ink-muted">
                     {formatCurrency(current)} / {formatCurrency(target)}
                   </Text>
                 </Pressable>
-                <View className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <View className="h-2 overflow-hidden rounded-full bg-surface-raised">
                   <View
-                    className="h-2 rounded-full bg-slate-900"
+                    className={`h-2 rounded-full ${accentClasses.bg}`}
                     style={{ width: `${Math.round(goalProgress(item) * 100)}%` }}
                   />
                 </View>
@@ -178,7 +183,7 @@ export function SavingsModuleView() {
                     </Button>
                   </View>
                   <Pressable onPress={() => setDeleteTarget(item)} hitSlop={8}>
-                    <Text className="text-xs text-red-600">Delete</Text>
+                    <Text className="text-xs text-danger">Delete</Text>
                   </Pressable>
                 </View>
               </View>
@@ -193,6 +198,7 @@ export function SavingsModuleView() {
             onSubmit={handleSubmit}
             onCancel={() => setFormOpen(false)}
             submitError={formError}
+            accent={accentKey}
           />
         </Modal>
       )}
@@ -205,6 +211,7 @@ export function SavingsModuleView() {
             onSubmit={handleFundsAdjustment}
             onCancel={() => setFundingTarget(null)}
             submitError={fundingError}
+            accent={accentKey}
           />
         </Modal>
       )}

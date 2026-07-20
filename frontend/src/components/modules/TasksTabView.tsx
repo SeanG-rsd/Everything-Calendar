@@ -4,6 +4,7 @@ import { SegmentedModulesView } from './SegmentedModulesView';
 export function TasksTabView() {
   return (
     <SegmentedModulesView
+      accent="tasks"
       sections={[
         {
           name: 'To-Dos',

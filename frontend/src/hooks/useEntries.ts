@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as entriesApi from '../api/entries';
-import type { ApiError } from '../api/client';
 import type { Entry, EntryCreate, EntryUpdate } from '../api/types';
 
 interface UseEntriesOptions {
@@ -26,7 +25,7 @@ export function useEntries({ moduleId, status, limit = 20, offset = 0 }: UseEntr
     try {
       setEntries(await entriesApi.listEntries({ module_id: moduleId, status, limit, offset }));
     } catch (err) {
-      setError((err as ApiError).detail);
+      setError((err as Error).message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
     }

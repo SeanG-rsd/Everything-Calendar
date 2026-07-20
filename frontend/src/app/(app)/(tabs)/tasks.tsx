@@ -1,12 +1,10 @@
-import { TabHeader } from '@/components/layout/TabHeader';
+import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
 import { TasksTabView } from '@/components/modules/TasksTabView';
-import { View } from 'react-native';
 
 export default function TasksScreen() {
   return (
-    <View className="flex-1">
-      <TabHeader />
+    <SafeAreaScreen>
       <TasksTabView />
-    </View>
+    </SafeAreaScreen>
   );
 }

@@ -1,12 +1,10 @@
-import { TabHeader } from '@/components/layout/TabHeader';
+import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
 import { SavingsModuleView } from '@/components/modules/SavingsModuleView';
-import { View } from 'react-native';
 
 export default function FinancialScreen() {
   return (
-    <View className="flex-1">
-      <TabHeader />
+    <SafeAreaScreen>
       <SavingsModuleView />
-    </View>
+    </SafeAreaScreen>
   );
 }

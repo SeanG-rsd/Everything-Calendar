@@ -1,7 +1,8 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
+import { getModuleAccentKey } from '@/theme/moduleAccent';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -21,6 +22,8 @@ function entryTitle(entry: Entry): string {
 export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(moduleName);
+  const accentKey = getModuleAccentKey(moduleName);
+  const accentClasses = moduleClassNames[accentKey];
 
   const { entries, loading, error, create, update, remove } = useEntries({ moduleId: module?.id });
 
@@ -30,7 +33,7 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
 
   if (modulesLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
+      <View className="flex-1 items-center justify-center bg-background">
         <Spinner />
       </View>
     );
@@ -38,7 +41,7 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
 
   if (modulesError || !module) {
     return (
-      <View className="flex-1 gap-4 bg-slate-50 p-4">
+      <View className="flex-1 gap-4 bg-background p-4">
         <ErrorBanner message={modulesError ?? `"${moduleName}" module isn't set up yet.`} />
       </View>
     );
@@ -51,7 +54,7 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
       await create({ payload: { title: newTitle.trim() } });
       setNewTitle('');
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -60,7 +63,7 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
     try {
       await update(entry.id, { status: entry.status === 'done' ? 'active' : 'done' });
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -70,17 +73,17 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
       await remove(deleteTarget.id);
       setDeleteTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
   const doneCount = entries.filter((entry) => entry.status === 'done').length;
 
   return (
-    <View className="flex-1 bg-slate-50 p-4">
+    <View className="flex-1 bg-background p-4">
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-slate-900">{moduleName}</Text>
-        <Text className="text-sm text-slate-500">
+        <Text className={`text-xl font-semibold ${accentClasses.text}`}>{moduleName}</Text>
+        <Text className="text-sm text-ink-muted">
           {doneCount}/{entries.length} done
         </Text>
       </View>
@@ -97,14 +100,14 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
             returnKeyType="done"
           />
         </View>
-        <Button onPress={handleAdd} disabled={!newTitle.trim()}>
+        <Button accent={accentKey} onPress={handleAdd} disabled={!newTitle.trim()}>
           Add
         </Button>
       </View>
       {loading ? (
         <Spinner />
       ) : entries.length === 0 ? (
-        <Text className="text-sm text-slate-500">No items yet — add one above.</Text>
+        <Text className="text-sm text-ink-muted">No items yet — add one above.</Text>
       ) : (
         <FlatList
           data={entries}
@@ -113,25 +116,25 @@ export function ChecklistModuleView({ moduleName }: ChecklistModuleViewProps) {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => handleToggle(item)}
-              className="flex-row items-center justify-between rounded-md border border-slate-200 bg-white p-3">
+              className="flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
               <View className="flex-1 flex-row items-center gap-3">
                 <View
                   className={`h-5 w-5 items-center justify-center rounded border ${
                     item.status === 'done'
-                      ? 'border-slate-900 bg-slate-900'
-                      : 'border-slate-300 bg-white'
+                      ? `${accentClasses.borderStrong} ${accentClasses.bgStrong}`
+                      : 'border-border bg-surface'
                   }`}>
-                  {item.status === 'done' && <Text className="text-xs text-white">✓</Text>}
+                  {item.status === 'done' && <Text className="text-xs text-on-accent">✓</Text>}
                 </View>
                 <Text
                   className={`flex-1 text-sm ${
-                    item.status === 'done' ? 'text-slate-400 line-through' : 'text-slate-900'
+                    item.status === 'done' ? 'text-ink-faint line-through' : 'text-ink'
                   }`}>
                   {entryTitle(item)}
                 </Text>
               </View>
               <Pressable onPress={() => setDeleteTarget(item)} hitSlop={8}>
-                <Text className="text-xs text-red-600">Delete</Text>
+                <Text className="text-xs text-danger">Delete</Text>
               </Pressable>
             </Pressable>
           )}

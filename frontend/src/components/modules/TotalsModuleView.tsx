@@ -1,7 +1,8 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
+import { getModuleAccentKey } from '@/theme/moduleAccent';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -30,6 +31,8 @@ function entryTitle(entry: Entry): string {
 export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(moduleName);
+  const accentKey = getModuleAccentKey(moduleName);
+  const accentClasses = moduleClassNames[accentKey];
 
   const { entries, loading, error, create, update, remove } = useEntries({ moduleId: module?.id });
 
@@ -41,7 +44,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
 
   if (modulesLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
+      <View className="flex-1 items-center justify-center bg-background">
         <Spinner />
       </View>
     );
@@ -49,7 +52,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
 
   if (modulesError || !module) {
     return (
-      <View className="flex-1 gap-4 bg-slate-50 p-4">
+      <View className="flex-1 gap-4 bg-background p-4">
         <ErrorBanner message={modulesError ?? `"${moduleName}" module isn't set up yet.`} />
       </View>
     );
@@ -82,7 +85,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
       }
       setFormOpen(false);
     } catch (err) {
-      setFormError((err as ApiError).detail);
+      setFormError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -94,7 +97,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
     try {
       await update(entry.id, { payload: { ...entry.payload, current: next } });
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -104,25 +107,27 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
       await remove(deleteTarget.id);
       setDeleteTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
   return (
-    <View className="flex-1 bg-slate-50 p-4">
+    <View className="flex-1 bg-background p-4">
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-slate-900">{moduleName}</Text>
-        <Button onPress={openCreate}>Add metric</Button>
+        <Text className={`text-xl font-semibold ${accentClasses.text}`}>{moduleName}</Text>
+        <Button accent={accentKey} onPress={openCreate}>
+          Add metric
+        </Button>
       </View>
       <View className="mb-4 items-center">
-        <ProgressRing progress={overallProgress} label="today" />
+        <ProgressRing progress={overallProgress} label="today" accent={accentKey} />
       </View>
       <ErrorBanner message={error} />
       <ErrorBanner message={pageError} />
       {loading ? (
         <Spinner />
       ) : entries.length === 0 ? (
-        <Text className="text-sm text-slate-500">No metrics yet — add one above.</Text>
+        <Text className="text-sm text-ink-muted">No metrics yet — add one above.</Text>
       ) : (
         <FlatList
           data={entries}
@@ -133,18 +138,18 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
             const current = typeof item.payload.current === 'number' ? item.payload.current : 0;
             const unit = typeof item.payload.unit === 'string' ? item.payload.unit : '';
             return (
-              <View className="rounded-md border border-slate-200 bg-white p-3">
+              <View className="rounded-md border border-border bg-surface p-3">
                 <Pressable
                   onPress={() => openEdit(item)}
                   className="mb-2 flex-row items-center justify-between">
-                  <Text className="font-medium text-slate-900">{entryTitle(item)}</Text>
-                  <Text className="text-xs text-slate-500">
+                  <Text className="font-medium text-ink">{entryTitle(item)}</Text>
+                  <Text className="text-xs text-ink-muted">
                     {current}/{target} {unit}
                   </Text>
                 </Pressable>
-                <View className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <View className="h-2 overflow-hidden rounded-full bg-surface-raised">
                   <View
-                    className="h-2 rounded-full bg-slate-900"
+                    className={`h-2 rounded-full ${accentClasses.bg}`}
                     style={{ width: `${Math.round(metricProgress(item) * 100)}%` }}
                   />
                 </View>
@@ -158,7 +163,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
                     </Button>
                   </View>
                   <Pressable onPress={() => setDeleteTarget(item)} hitSlop={8}>
-                    <Text className="text-xs text-red-600">Delete</Text>
+                    <Text className="text-xs text-danger">Delete</Text>
                   </Pressable>
                 </View>
               </View>
@@ -173,6 +178,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
             onSubmit={handleSubmit}
             onCancel={() => setFormOpen(false)}
             submitError={formError}
+            accent={accentKey}
           />
         </Modal>
       )}

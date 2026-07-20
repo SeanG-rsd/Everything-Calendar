@@ -1,4 +1,3 @@
-import type { ApiError } from '@/api/client';
 import * as modulesApi from '@/api/modules';
 import type { Module } from '@/api/types';
 import {
@@ -31,7 +30,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
     try {
       setModules(await modulesApi.listModules());
     } catch (err) {
-      setError((err as ApiError).detail);
+      setError((err as Error).message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
     }

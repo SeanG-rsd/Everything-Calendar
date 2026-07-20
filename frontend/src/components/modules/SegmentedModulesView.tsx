@@ -1,4 +1,6 @@
 import { useModulesContext } from '@/modules/ModulesContext';
+import type { ModuleAccentKey } from '@/theme/colors';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useState, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -10,10 +12,12 @@ interface Section {
 
 interface SegmentedModulesViewProps {
   sections: Section[];
+  accent: ModuleAccentKey;
 }
 
-export function SegmentedModulesView({ sections }: SegmentedModulesViewProps) {
+export function SegmentedModulesView({ sections, accent }: SegmentedModulesViewProps) {
   const { findByName } = useModulesContext();
+  const accentClasses = moduleClassNames[accent];
   const [selected, setSelected] = useState(sections[0]?.name);
 
   const visibleSections = sections.filter((s) => {
@@ -28,19 +32,19 @@ export function SegmentedModulesView({ sections }: SegmentedModulesViewProps) {
   const activeSection = visibleSections.find((s) => s.name === activeName);
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-background">
       {visibleSections.length > 1 && (
-        <View className="flex-row gap-2 border-b border-slate-200 bg-white p-3">
+        <View className="flex-row gap-2 border-b border-border bg-surface p-3">
           {visibleSections.map((s) => (
             <Pressable
               key={s.name}
               onPress={() => setSelected(s.name)}
               className={`flex-1 items-center rounded-md py-2 ${
-                activeName === s.name ? 'bg-slate-900' : 'bg-slate-100'
+                activeName === s.name ? accentClasses.bg : 'bg-surface-raised'
               }`}>
               <Text
                 className={`text-sm font-medium ${
-                  activeName === s.name ? 'text-white' : 'text-slate-600'
+                  activeName === s.name ? 'text-on-accent' : 'text-ink-muted'
                 }`}>
                 {s.label}
               </Text>

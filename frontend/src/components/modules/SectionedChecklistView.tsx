@@ -1,7 +1,8 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
+import { getModuleAccentKey } from '@/theme/moduleAccent';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -37,6 +38,8 @@ function taskTitle(entry: Entry): string {
 export function SectionedChecklistView({ moduleName }: SectionedChecklistViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(moduleName);
+  const accentKey = getModuleAccentKey(moduleName);
+  const accentClasses = moduleClassNames[accentKey];
 
   const { entries, loading, error, create, update, remove } = useEntries({ moduleId: module?.id });
 
@@ -53,7 +56,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
 
   if (modulesLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
+      <View className="flex-1 items-center justify-center bg-background">
         <Spinner />
       </View>
     );
@@ -61,7 +64,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
 
   if (modulesError || !module) {
     return (
-      <View className="flex-1 gap-4 bg-slate-50 p-4">
+      <View className="flex-1 gap-4 bg-background p-4">
         <ErrorBanner message={modulesError ?? `"${moduleName}" module isn't set up yet.`} />
       </View>
     );
@@ -93,7 +96,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       setNewSectionName('');
       setSectionFormOpen(false);
     } catch (err) {
-      setSectionFormError((err as ApiError).detail);
+      setSectionFormError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -110,7 +113,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       });
       setDraftTitles((prev) => ({ ...prev, [group.key]: '' }));
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -119,7 +122,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
     try {
       await update(entry.id, { status: entry.status === 'done' ? 'active' : 'done' });
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -129,7 +132,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       await remove(deleteTaskTarget.id);
       setDeleteTaskTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -145,15 +148,17 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       await remove(deleteSectionTarget.id);
       setDeleteSectionTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
   return (
-    <View className="flex-1 bg-slate-50 p-4">
+    <View className="flex-1 bg-background p-4">
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-slate-900">{moduleName}</Text>
-        <Button onPress={() => setSectionFormOpen(true)}>New section</Button>
+        <Text className={`text-xl font-semibold ${accentClasses.text}`}>{moduleName}</Text>
+        <Button accent={accentKey} onPress={() => setSectionFormOpen(true)}>
+          New section
+        </Button>
       </View>
       <ErrorBanner message={error} />
       <ErrorBanner message={pageError} />
@@ -166,12 +171,12 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
           contentContainerClassName="gap-2"
           stickySectionHeadersEnabled={false}
           renderSectionHeader={({ section: group }) => (
-            <View className="mb-2 mt-3 gap-2 bg-slate-50">
+            <View className="mb-2 mt-3 gap-2 bg-background">
               <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold text-slate-700">{group.title}</Text>
+                <Text className="text-sm font-semibold text-ink-muted">{group.title}</Text>
                 {group.sectionEntry && (
                   <Pressable onPress={() => setDeleteSectionTarget(group.sectionEntry)} hitSlop={8}>
-                    <Text className="text-xs text-red-600">Delete section</Text>
+                    <Text className="text-xs text-danger">Delete section</Text>
                   </Pressable>
                 )}
               </View>
@@ -196,32 +201,32 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
                 </Button>
               </View>
               {group.data.length === 0 && (
-                <Text className="text-xs text-slate-400">No tasks yet.</Text>
+                <Text className="text-xs text-ink-faint">No tasks yet.</Text>
               )}
             </View>
           )}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => handleToggle(item)}
-              className="mb-2 flex-row items-center justify-between rounded-md border border-slate-200 bg-white p-3">
+              className="mb-2 flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
               <View className="flex-1 flex-row items-center gap-3">
                 <View
                   className={`h-5 w-5 items-center justify-center rounded border ${
                     item.status === 'done'
-                      ? 'border-slate-900 bg-slate-900'
-                      : 'border-slate-300 bg-white'
+                      ? `${accentClasses.borderStrong} ${accentClasses.bgStrong}`
+                      : 'border-border bg-surface'
                   }`}>
-                  {item.status === 'done' && <Text className="text-xs text-white">✓</Text>}
+                  {item.status === 'done' && <Text className="text-xs text-on-accent">✓</Text>}
                 </View>
                 <Text
                   className={`flex-1 text-sm ${
-                    item.status === 'done' ? 'text-slate-400 line-through' : 'text-slate-900'
+                    item.status === 'done' ? 'text-ink-faint line-through' : 'text-ink'
                   }`}>
                   {taskTitle(item)}
                 </Text>
               </View>
               <Pressable onPress={() => setDeleteTaskTarget(item)} hitSlop={8}>
-                <Text className="text-xs text-red-600">Delete</Text>
+                <Text className="text-xs text-danger">Delete</Text>
               </Pressable>
             </Pressable>
           )}
@@ -242,7 +247,7 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
               <Button variant="secondary" onPress={() => setSectionFormOpen(false)}>
                 Cancel
               </Button>
-              <Button onPress={handleCreateSection} disabled={!newSectionName.trim()}>
+              <Button accent={accentKey} onPress={handleCreateSection} disabled={!newSectionName.trim()}>
                 Create
               </Button>
             </View>

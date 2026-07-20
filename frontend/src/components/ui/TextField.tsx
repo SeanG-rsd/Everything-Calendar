@@ -8,10 +8,10 @@ interface TextFieldProps extends TextInputProps {
 export function TextField({ label, className = '', ...props }: TextFieldProps) {
   return (
     <View className="flex flex-col gap-1">
-      <Text className="text-sm font-medium text-slate-700">{label}</Text>
+      <Text className="text-sm font-medium text-ink-muted">{label}</Text>
       <TextInput
-        className={`rounded-md border border-slate-300 px-3 py-2 text-sm ${className}`}
-        placeholderTextColor="#94a3b8"
+        className={`rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink ${className}`}
+        placeholderTextColor="#626B7A"
         {...props}
       />
     </View>

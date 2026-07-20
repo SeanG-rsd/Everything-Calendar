@@ -22,7 +22,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Modal title={title} onClose={onCancel}>
-      <Text className="mb-4 text-sm text-slate-600">{message}</Text>
+      <Text className="mb-4 text-sm text-ink-muted">{message}</Text>
       {error && (
         <View className="mb-4">
           <ErrorBanner message={error} />

@@ -1,18 +1,27 @@
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { colors, moduleAccents, type ModuleAccentKey } from '@/theme/colors';
 
 interface ProgressRingProps {
   progress: number;
   size?: number;
   strokeWidth?: number;
   label?: string;
+  accent?: ModuleAccentKey;
 }
 
-export function ProgressRing({ progress, size = 120, strokeWidth = 12, label }: ProgressRingProps) {
+export function ProgressRing({
+  progress,
+  size = 120,
+  strokeWidth = 12,
+  label,
+  accent,
+}: ProgressRingProps) {
   const clamped = Math.max(0, Math.min(1, progress));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - clamped);
+  const fillColor = accent ? moduleAccents[accent].strong : colors.ink;
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -21,7 +30,7 @@ export function ProgressRing({ progress, size = 120, strokeWidth = 12, label }: 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#e2e8f0"
+          stroke={colors.surfaceRaised}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -29,7 +38,7 @@ export function ProgressRing({ progress, size = 120, strokeWidth = 12, label }: 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#0f172a"
+          stroke={fillColor}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
@@ -40,8 +49,8 @@ export function ProgressRing({ progress, size = 120, strokeWidth = 12, label }: 
         />
       </Svg>
       <View className="items-center">
-        <Text className="text-2xl font-semibold text-slate-900">{Math.round(clamped * 100)}%</Text>
-        {label && <Text className="text-xs text-slate-500">{label}</Text>}
+        <Text className="text-2xl font-semibold text-ink">{Math.round(clamped * 100)}%</Text>
+        {label && <Text className="text-xs text-ink-muted">{label}</Text>}
       </View>
     </View>
   );

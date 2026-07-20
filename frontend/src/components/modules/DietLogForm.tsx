@@ -1,4 +1,5 @@
 import type { Entry } from '@/api/types';
+import type { ModuleAccentKey } from '@/theme/colors';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -15,9 +16,10 @@ interface DietLogFormProps {
   onSubmit: (values: DietLogValues) => Promise<void>;
   onCancel: () => void;
   submitError?: string | null;
+  accent?: ModuleAccentKey;
 }
 
-export function DietLogForm({ entry, onSubmit, onCancel, submitError }: DietLogFormProps) {
+export function DietLogForm({ entry, onSubmit, onCancel, submitError, accent }: DietLogFormProps) {
   const payload = entry?.payload ?? {};
   const [calories, setCalories] = useState(
     String(typeof payload.calories === 'number' ? payload.calories : ''),
@@ -58,7 +60,7 @@ export function DietLogForm({ entry, onSubmit, onCancel, submitError }: DietLogF
         <Button variant="secondary" onPress={onCancel}>
           Cancel
         </Button>
-        <Button onPress={handleSubmit} disabled={submitting || !valid}>
+        <Button accent={accent} onPress={handleSubmit} disabled={submitting || !valid}>
           {entry ? 'Save' : 'Add'}
         </Button>
       </View>

@@ -1,4 +1,3 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
@@ -38,7 +37,7 @@ export function ExerciseTemplateEditor({ templates, onCreate, onDelete }: Exerci
       await onCreate(day, draft.title.trim(), sets, reps);
       setDrafts((prev) => ({ ...prev, [day]: { title: '', sets: '3', reps: '8' } }));
     } catch (err) {
-      setError((err as ApiError).detail);
+      setError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -47,28 +46,28 @@ export function ExerciseTemplateEditor({ templates, onCreate, onDelete }: Exerci
       <ErrorBanner message={error} />
       {DAYS.map((day) => (
         <View key={day} className="gap-2">
-          <Text className="text-sm font-semibold text-slate-700">{day}</Text>
+          <Text className="text-sm font-semibold text-ink-muted">{day}</Text>
           {templates
             .filter((t) => t.payload.day === day)
             .map((t) => (
               <View
                 key={t.id}
-                className="flex-row items-center justify-between rounded-md border border-slate-200 bg-white p-2">
-                <Text className="flex-1 text-sm text-slate-900">
+                className="flex-row items-center justify-between rounded-md border border-border bg-surface p-2">
+                <Text className="flex-1 text-sm text-ink">
                   {templateTitle(t)}{' '}
-                  <Text className="text-xs text-slate-500">
+                  <Text className="text-xs text-ink-muted">
                     ({String(t.payload.targetSets)}x{String(t.payload.targetReps)})
                   </Text>
                 </Text>
                 <Pressable onPress={() => onDelete(t)} hitSlop={8}>
-                  <Text className="text-xs text-red-600">Delete</Text>
+                  <Text className="text-xs text-danger">Delete</Text>
                 </Pressable>
               </View>
             ))}
           <View className="flex-row gap-2">
             <TextInput
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-              placeholderTextColor="#94a3b8"
+              className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"
+              placeholderTextColor="#626B7A"
               placeholder="Exercise name"
               value={drafts[day].title}
               onChangeText={(text) =>
@@ -76,8 +75,8 @@ export function ExerciseTemplateEditor({ templates, onCreate, onDelete }: Exerci
               }
             />
             <TextInput
-              className="w-14 rounded-md border border-slate-300 px-2 py-2 text-center text-sm"
-              placeholderTextColor="#94a3b8"
+              className="w-14 rounded-md border border-border bg-surface px-2 py-2 text-center text-sm text-ink"
+              placeholderTextColor="#626B7A"
               placeholder="Sets"
               keyboardType="numeric"
               value={drafts[day].sets}
@@ -86,8 +85,8 @@ export function ExerciseTemplateEditor({ templates, onCreate, onDelete }: Exerci
               }
             />
             <TextInput
-              className="w-14 rounded-md border border-slate-300 px-2 py-2 text-center text-sm"
-              placeholderTextColor="#94a3b8"
+              className="w-14 rounded-md border border-border bg-surface px-2 py-2 text-center text-sm text-ink"
+              placeholderTextColor="#626B7A"
               placeholder="Reps"
               keyboardType="numeric"
               value={drafts[day].reps}

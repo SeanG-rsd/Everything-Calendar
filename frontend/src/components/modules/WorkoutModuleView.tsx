@@ -1,7 +1,8 @@
-import type { ApiError } from '@/api/client';
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
+import { getModuleAccentKey } from '@/theme/moduleAccent';
+import { moduleClassNames } from '@/theme/moduleClassNames';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -12,6 +13,8 @@ import { Spinner } from '../ui/Spinner';
 import { ExerciseTemplateEditor } from './ExerciseTemplateEditor';
 
 const MODULE_NAME = 'Daily Workout';
+const accentKey = getModuleAccentKey(MODULE_NAME);
+const accentClasses = moduleClassNames[accentKey];
 const CYCLE = ['Push', 'Pull', 'Legs'] as const;
 type Day = (typeof CYCLE)[number];
 
@@ -74,7 +77,7 @@ export function WorkoutModuleView() {
 
   if (modulesLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
+      <View className="flex-1 items-center justify-center bg-background">
         <Spinner />
       </View>
     );
@@ -82,7 +85,7 @@ export function WorkoutModuleView() {
 
   if (modulesError || !module) {
     return (
-      <View className="flex-1 gap-4 bg-slate-50 p-4">
+      <View className="flex-1 gap-4 bg-background p-4">
         <ErrorBanner message={modulesError ?? `"${MODULE_NAME}" module isn't set up yet.`} />
       </View>
     );
@@ -103,7 +106,7 @@ export function WorkoutModuleView() {
       await remove(deleteTemplateTarget.id);
       setDeleteTemplateTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -121,7 +124,7 @@ export function WorkoutModuleView() {
     try {
       await create({ status: 'active', payload: { kind: 'session', day: nextDay, exercises } });
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -140,7 +143,7 @@ export function WorkoutModuleView() {
         payload: { ...activeSession.payload, exercises: draftExercises },
       });
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -150,14 +153,14 @@ export function WorkoutModuleView() {
       await remove(deleteSessionTarget.id);
       setDeleteSessionTarget(null);
     } catch (err) {
-      setPageError((err as ApiError).detail);
+      setPageError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
   return (
-    <View className="flex-1 bg-slate-50 p-4">
+    <View className="flex-1 bg-background p-4">
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-xl font-semibold text-slate-900">Workout</Text>
+        <Text className={`text-xl font-semibold ${accentClasses.text}`}>Workout</Text>
         <Button variant="secondary" onPress={() => setTemplateEditorOpen(true)}>
           Edit exercises
         </Button>
@@ -169,43 +172,43 @@ export function WorkoutModuleView() {
       ) : (
         <ScrollView contentContainerClassName="gap-4">
           {activeSession ? (
-            <View className="gap-3 rounded-md border border-slate-200 bg-white p-3">
-              <Text className="text-base font-semibold text-slate-900">
+            <View className="gap-3 rounded-md border border-border bg-surface p-3">
+              <Text className="text-base font-semibold text-ink">
                 {String(activeSession.payload.day)} Day — in progress
               </Text>
               {draftExercises.length === 0 ? (
-                <Text className="text-sm text-slate-500">
+                <Text className="text-sm text-ink-muted">
                   No exercises defined for this day yet — add some via "Edit exercises".
                 </Text>
               ) : (
                 draftExercises.map((ex, index) => (
-                  <View key={index} className="gap-1 border-t border-slate-100 pt-2">
-                    <Text className="text-sm font-medium text-slate-900">
+                  <View key={index} className="gap-1 border-t border-border-subtle pt-2">
+                    <Text className="text-sm font-medium text-ink">
                       {ex.title}{' '}
-                      <Text className="text-xs text-slate-500">
+                      <Text className="text-xs text-ink-muted">
                         (target: {ex.targetSets}x{ex.targetReps})
                       </Text>
                     </Text>
                     <View className="flex-row gap-2">
                       <TextInput
-                        className="w-16 rounded-md border border-slate-300 px-2 py-1.5 text-center text-sm"
-                        placeholderTextColor="#94a3b8"
+                        className="w-16 rounded-md border border-border bg-surface px-2 py-1.5 text-center text-sm text-ink"
+                        placeholderTextColor="#626B7A"
                         placeholder="Sets"
                         keyboardType="numeric"
                         value={ex.actualSets == null ? '' : String(ex.actualSets)}
                         onChangeText={(text) => updateDraft(index, 'actualSets', text)}
                       />
                       <TextInput
-                        className="w-16 rounded-md border border-slate-300 px-2 py-1.5 text-center text-sm"
-                        placeholderTextColor="#94a3b8"
+                        className="w-16 rounded-md border border-border bg-surface px-2 py-1.5 text-center text-sm text-ink"
+                        placeholderTextColor="#626B7A"
                         placeholder="Reps"
                         keyboardType="numeric"
                         value={ex.actualReps == null ? '' : String(ex.actualReps)}
                         onChangeText={(text) => updateDraft(index, 'actualReps', text)}
                       />
                       <TextInput
-                        className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-center text-sm"
-                        placeholderTextColor="#94a3b8"
+                        className="w-20 rounded-md border border-border bg-surface px-2 py-1.5 text-center text-sm text-ink"
+                        placeholderTextColor="#626B7A"
                         placeholder="Weight"
                         keyboardType="numeric"
                         value={ex.weight == null ? '' : String(ex.weight)}
@@ -219,29 +222,31 @@ export function WorkoutModuleView() {
                 <Button variant="danger" onPress={() => setDeleteSessionTarget(activeSession)}>
                   Discard
                 </Button>
-                <Button onPress={handleCompleteWorkout}>Complete workout</Button>
+                <Button accent={accentKey} onPress={handleCompleteWorkout}>
+                  Complete workout
+                </Button>
               </View>
             </View>
           ) : (
-            <View className="items-center gap-3 rounded-md border border-slate-200 bg-white p-4">
-              <Text className="text-sm text-slate-500">Next up</Text>
-              <Text className="text-2xl font-semibold text-slate-900">{nextDay} Day</Text>
-              <Button onPress={handleStartWorkout}>{`Start ${nextDay} workout`}</Button>
+            <View className="items-center gap-3 rounded-md border border-border bg-surface p-4">
+              <Text className="text-sm text-ink-muted">Next up</Text>
+              <Text className="text-2xl font-semibold text-ink">{nextDay} Day</Text>
+              <Button accent={accentKey} onPress={handleStartWorkout}>{`Start ${nextDay} workout`}</Button>
             </View>
           )}
 
           {doneSessions.length > 0 && (
             <View className="gap-2">
-              <Text className="text-sm font-semibold text-slate-700">Recent workouts</Text>
+              <Text className="text-sm font-semibold text-ink-muted">Recent workouts</Text>
               {doneSessions.map((session) => (
                 <View
                   key={session.id}
-                  className="flex-row items-center justify-between rounded-md border border-slate-200 bg-white p-3">
-                  <Text className="text-sm text-slate-900">
+                  className="flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
+                  <Text className="text-sm text-ink">
                     {String(session.payload.day)} — {new Date(session.updated_at).toLocaleDateString()}
                   </Text>
                   <Pressable onPress={() => setDeleteSessionTarget(session)} hitSlop={8}>
-                    <Text className="text-xs text-red-600">Delete</Text>
+                    <Text className="text-xs text-danger">Delete</Text>
                   </Pressable>
                 </View>
               ))}

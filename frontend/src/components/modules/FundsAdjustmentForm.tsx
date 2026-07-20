@@ -1,3 +1,4 @@
+import type { ModuleAccentKey } from '@/theme/colors';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -9,9 +10,16 @@ interface FundsAdjustmentFormProps {
   onSubmit: (amount: number) => Promise<void>;
   onCancel: () => void;
   submitError?: string | null;
+  accent?: ModuleAccentKey;
 }
 
-export function FundsAdjustmentForm({ mode, onSubmit, onCancel, submitError }: FundsAdjustmentFormProps) {
+export function FundsAdjustmentForm({
+  mode,
+  onSubmit,
+  onCancel,
+  submitError,
+  accent,
+}: FundsAdjustmentFormProps) {
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,7 +51,7 @@ export function FundsAdjustmentForm({ mode, onSubmit, onCancel, submitError }: F
         <Button variant="secondary" onPress={onCancel}>
           Cancel
         </Button>
-        <Button onPress={handleSubmit} disabled={submitting || !valid}>
+        <Button accent={accent} onPress={handleSubmit} disabled={submitting || !valid}>
           {mode === 'add' ? 'Add' : 'Subtract'}
         </Button>
       </View>

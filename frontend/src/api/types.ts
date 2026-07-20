@@ -1,20 +1,7 @@
-export interface User {
-  id: number;
-  email: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface Token {
-  access_token: string;
-  token_type: string;
-}
-
 export type ModuleCategory = 'list' | 'totals';
 
 export interface Module {
   id: number;
-  user_id: number;
   name: string;
   category: ModuleCategory;
   schema_definition: Record<string, unknown>;
