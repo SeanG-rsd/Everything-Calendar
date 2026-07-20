@@ -9,7 +9,8 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "com.nutronlabs.EverythingCalendar",
-      "buildNumber": "1",
+      "buildNumber": "4",
+      "supportsTablet": true,
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -38,7 +39,9 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-font",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

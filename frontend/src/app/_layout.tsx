@@ -1,5 +1,7 @@
+import '../errorHandler';
 import '../global.css';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { colors } from '@/theme/colors';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,7 +17,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <Slot />
+      <ErrorBoundary>
+        <Slot />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
