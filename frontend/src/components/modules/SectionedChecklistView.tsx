@@ -1,8 +1,11 @@
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
+import { formatDateDisplay } from '@/lib/date';
+import { compareTasks, isTaskOverdue, taskDueDate, taskPriority, taskTitle, PRIORITY_LABELS } from '@/lib/tasks';
 import { useModulesContext } from '@/modules/ModulesContext';
 import { getModuleAccentKey } from '@/theme/moduleAccent';
 import { moduleClassNames } from '@/theme/moduleClassNames';
+import { priorityClassNames } from '@/theme/priorityClassNames';
 import { useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -11,6 +14,7 @@ import { ErrorBanner } from '../ui/ErrorBanner';
 import { Modal } from '../ui/Modal';
 import { Spinner } from '../ui/Spinner';
 import { TextField } from '../ui/TextField';
+import { TaskEditForm, type TaskEditValues } from './TaskEditForm';
 
 interface SectionedChecklistViewProps {
   moduleName: string;
@@ -31,10 +35,6 @@ function getSectionName(entry: Entry): string {
   return typeof entry.payload.name === 'string' ? entry.payload.name : 'Section';
 }
 
-function taskTitle(entry: Entry): string {
-  return typeof entry.payload.title === 'string' ? entry.payload.title : `Task #${entry.id}`;
-}
-
 export function SectionedChecklistView({ moduleName }: SectionedChecklistViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(moduleName);
@@ -53,6 +53,8 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
 
   const [deleteSectionTarget, setDeleteSectionTarget] = useState<Entry | null>(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState<Entry | null>(null);
+  const [editingTask, setEditingTask] = useState<Entry | null>(null);
+  const [editTaskError, setEditTaskError] = useState<string | null>(null);
 
   if (modulesLoading) {
     return (
@@ -78,13 +80,13 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       key: `section-${sec.id}`,
       title: getSectionName(sec),
       sectionEntry: sec,
-      data: taskEntries.filter((task) => task.payload.sectionId === sec.id),
+      data: taskEntries.filter((task) => task.payload.sectionId === sec.id).sort(compareTasks),
     })),
     {
       key: 'general',
       title: 'General',
       sectionEntry: null,
-      data: taskEntries.filter((task) => task.payload.sectionId == null),
+      data: taskEntries.filter((task) => task.payload.sectionId == null).sort(compareTasks),
     },
   ];
 
@@ -123,6 +125,19 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
       await update(entry.id, { status: entry.status === 'done' ? 'active' : 'done' });
     } catch (err) {
       setPageError((err as Error).message ?? 'Something went wrong.');
+    }
+  }
+
+  async function handleUpdateTask(values: TaskEditValues) {
+    if (!editingTask) return;
+    setEditTaskError(null);
+    try {
+      await update(editingTask.id, {
+        payload: { ...editingTask.payload, priority: values.priority, dueDate: values.dueDate },
+      });
+      setEditingTask(null);
+    } catch (err) {
+      setEditTaskError((err as Error).message ?? 'Something went wrong.');
     }
   }
 
@@ -205,31 +220,54 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
               )}
             </View>
           )}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => handleToggle(item)}
-              className="mb-2 flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
-              <View className="flex-1 flex-row items-center gap-3">
-                <View
-                  className={`h-5 w-5 items-center justify-center rounded border ${
-                    item.status === 'done'
-                      ? `${accentClasses.borderStrong} ${accentClasses.bgStrong}`
-                      : 'border-border bg-surface'
-                  }`}>
-                  {item.status === 'done' && <Text className="text-xs text-on-accent">✓</Text>}
+          renderItem={({ item }) => {
+            const priority = taskPriority(item);
+            const dueDate = taskDueDate(item);
+            const overdue = isTaskOverdue(item);
+            return (
+              <View className="mb-2 flex-row items-center justify-between rounded-md border border-border bg-surface p-3">
+                <View className="flex-1 flex-row items-center gap-3">
+                  <Pressable
+                    onPress={() => handleToggle(item)}
+                    hitSlop={8}
+                    className={`h-5 w-5 items-center justify-center rounded border ${
+                      item.status === 'done'
+                        ? `${accentClasses.borderStrong} ${accentClasses.bgStrong}`
+                        : 'border-border bg-surface'
+                    }`}>
+                    {item.status === 'done' && <Text className="text-xs text-on-accent">✓</Text>}
+                  </Pressable>
+                  <Pressable className="flex-1 gap-1" onPress={() => setEditingTask(item)}>
+                    <Text
+                      className={`text-sm ${
+                        item.status === 'done' ? 'text-ink-faint line-through' : 'text-ink'
+                      }`}>
+                      {taskTitle(item)}
+                    </Text>
+                    {(priority || dueDate) && (
+                      <View className="flex-row items-center gap-2">
+                        {priority && (
+                          <View className={`rounded px-1.5 py-0.5 ${priorityClassNames[priority].bg}`}>
+                            <Text className={`text-xs ${priorityClassNames[priority].text}`}>
+                              {PRIORITY_LABELS[priority]}
+                            </Text>
+                          </View>
+                        )}
+                        {dueDate && (
+                          <Text className={`text-xs ${overdue ? 'text-danger' : 'text-ink-faint'}`}>
+                            {formatDateDisplay(dueDate)}
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                  </Pressable>
                 </View>
-                <Text
-                  className={`flex-1 text-sm ${
-                    item.status === 'done' ? 'text-ink-faint line-through' : 'text-ink'
-                  }`}>
-                  {taskTitle(item)}
-                </Text>
+                <Pressable onPress={() => setDeleteTaskTarget(item)} hitSlop={8}>
+                  <Text className="text-xs text-danger">Delete</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={() => setDeleteTaskTarget(item)} hitSlop={8}>
-                <Text className="text-xs text-danger">Delete</Text>
-              </Pressable>
-            </Pressable>
-          )}
+            );
+          }}
         />
       )}
       {sectionFormOpen && (
@@ -252,6 +290,17 @@ export function SectionedChecklistView({ moduleName }: SectionedChecklistViewPro
               </Button>
             </View>
           </View>
+        </Modal>
+      )}
+      {editingTask && (
+        <Modal title={taskTitle(editingTask)} onClose={() => setEditingTask(null)}>
+          <TaskEditForm
+            entry={editingTask}
+            onSubmit={handleUpdateTask}
+            onCancel={() => setEditingTask(null)}
+            submitError={editTaskError}
+            accent={accentKey}
+          />
         </Modal>
       )}
       {deleteTaskTarget && (

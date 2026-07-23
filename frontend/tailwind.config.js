@@ -14,6 +14,11 @@ module.exports = {
         ink: { DEFAULT: '#EDEFF4', muted: '#98A2B3', faint: '#626B7A' },
         'on-accent': '#12141A',
         danger: { DEFAULT: '#F2555A', subtle: '#33191C', fg: '#FFC9C9' },
+        priority: {
+          high: { DEFAULT: '#F2555A', subtle: '#33191C' },
+          medium: { DEFAULT: '#F5D67A', subtle: '#332B15' },
+          low: { DEFAULT: '#8FDCA6', subtle: '#17301F' },
+        },
         module: {
           tasks: { DEFAULT: '#7EB6FF', strong: '#4A90E2', subtle: '#16233A' },
           goals: { DEFAULT: '#C4A7F2', strong: '#9C6ADE', subtle: '#241B36' },

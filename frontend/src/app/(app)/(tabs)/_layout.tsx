@@ -1,9 +1,7 @@
 import { useModulesContext } from '@/modules/ModulesContext';
 import { colors, moduleAccents } from '@/theme/colors';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
-
-const { Label, Icon, VectorIcon } = NativeTabs.Trigger;
+import { Icon, Label, NativeTabs, VectorIcon } from 'expo-router/unstable-native-tabs';
 
 export default function TabsLayout() {
   const { findByName } = useModulesContext();

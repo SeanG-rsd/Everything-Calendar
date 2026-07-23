@@ -13,6 +13,11 @@ export const colors = {
   inkFaint: '#626B7A',
   onAccent: '#12141A',
   danger: { default: '#F2555A', subtle: '#33191C', fg: '#FFC9C9' },
+  priority: {
+    high: { default: '#F2555A', subtle: '#33191C' },
+    medium: { default: '#F5D67A', subtle: '#332B15' },
+    low: { default: '#8FDCA6', subtle: '#17301F' },
+  },
 } as const;
 
 export type ModuleAccentKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial';
