@@ -1,8 +1,9 @@
 import type { Entry } from '@/api/types';
-import { useEntries } from '@/hooks/useEntries';
+import type { EntriesController } from '@/hooks/useEntries';
 import { useModulesContext } from '@/modules/ModulesContext';
 import { getModuleAccentKey } from '@/theme/moduleAccent';
 import { moduleClassNames } from '@/theme/moduleClassNames';
+import { findDayEntry, listDayNames } from '@/lib/workoutDays';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from '../ui/Button';
@@ -15,8 +16,6 @@ import { ExerciseTemplateEditor } from './ExerciseTemplateEditor';
 const MODULE_NAME = 'Daily Workout';
 const accentKey = getModuleAccentKey(MODULE_NAME);
 const accentClasses = moduleClassNames[accentKey];
-const CYCLE = ['Push', 'Pull', 'Legs'] as const;
-type Day = (typeof CYCLE)[number];
 
 interface SessionExercise {
   title: string;
@@ -35,34 +34,38 @@ function isSession(entry: Entry): boolean {
   return entry.payload.kind === 'session';
 }
 
-function isValidDay(value: unknown): value is Day {
-  return value === 'Push' || value === 'Pull' || value === 'Legs';
-}
-
-function computeNextDay(entries: Entry[]): Day {
+function computeNextDay(entries: Entry[], days: string[]): string | null {
+  if (days.length === 0) return null;
   const doneSessions = entries.filter((e) => isSession(e) && e.status === 'done');
-  if (doneSessions.length === 0) return 'Push';
+  if (doneSessions.length === 0) return days[0];
   const latest = doneSessions.reduce((a, b) =>
     new Date(a.updated_at) > new Date(b.updated_at) ? a : b,
   );
-  const lastDay = isValidDay(latest.payload.day) ? latest.payload.day : 'Push';
-  return CYCLE[(CYCLE.indexOf(lastDay) + 1) % CYCLE.length];
+  const lastDay = typeof latest.payload.day === 'string' ? latest.payload.day : days[0];
+  const lastIndex = days.indexOf(lastDay);
+  if (lastIndex === -1) return days[0];
+  return days[(lastIndex + 1) % days.length];
 }
 
 function getSessionExercises(entry: Entry): SessionExercise[] {
   return Array.isArray(entry.payload.exercises) ? (entry.payload.exercises as SessionExercise[]) : [];
 }
 
-export function WorkoutModuleView() {
+interface WorkoutModuleViewProps {
+  entries: EntriesController;
+}
+
+export function WorkoutModuleView({ entries: entriesController }: WorkoutModuleViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(MODULE_NAME);
 
-  const { entries, loading, error, create, update, remove } = useEntries({ moduleId: module?.id });
+  const { entries, loading, error, create, update, remove } = entriesController;
 
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [deleteSessionTarget, setDeleteSessionTarget] = useState<Entry | null>(null);
   const [deleteTemplateTarget, setDeleteTemplateTarget] = useState<Entry | null>(null);
+  const [deleteDayTarget, setDeleteDayTarget] = useState<string | null>(null);
 
   const templates = entries.filter(isTemplate);
   const sessions = entries.filter(isSession);
@@ -91,12 +94,13 @@ export function WorkoutModuleView() {
     );
   }
 
-  const nextDay = computeNextDay(entries);
+  const days = listDayNames(entries);
+  const nextDay = computeNextDay(entries, days);
   const doneSessions = sessions
     .filter((s) => s.status === 'done')
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
-  async function handleCreateTemplate(day: Day, title: string, targetSets: number, targetReps: number) {
+  async function handleCreateTemplate(day: string, title: string, targetSets: number, targetReps: number) {
     await create({ payload: { kind: 'template', day, title, targetSets, targetReps } });
   }
 
@@ -110,7 +114,29 @@ export function WorkoutModuleView() {
     }
   }
 
+  async function handleCreateDay(name: string) {
+    await create({ payload: { kind: 'day', name } });
+  }
+
+  async function handleDeleteDay() {
+    if (!deleteDayTarget) return;
+    setPageError(null);
+    try {
+      for (const template of templates.filter((t) => t.payload.day === deleteDayTarget)) {
+        await remove(template.id);
+      }
+      const dayEntry = findDayEntry(entries, deleteDayTarget);
+      if (dayEntry) {
+        await remove(dayEntry.id);
+      }
+      setDeleteDayTarget(null);
+    } catch (err) {
+      setPageError((err as Error).message ?? 'Something went wrong.');
+    }
+  }
+
   async function handleStartWorkout() {
+    if (!nextDay) return;
     setPageError(null);
     const dayTemplates = templates.filter((t) => t.payload.day === nextDay);
     const exercises: SessionExercise[] = dayTemplates.map((t) => ({
@@ -227,11 +253,17 @@ export function WorkoutModuleView() {
                 </Button>
               </View>
             </View>
-          ) : (
+          ) : nextDay ? (
             <View className="items-center gap-3 rounded-md border border-border bg-surface p-4">
               <Text className="text-sm text-ink-muted">Next up</Text>
               <Text className="text-2xl font-semibold text-ink">{nextDay} Day</Text>
               <Button accent={accentKey} onPress={handleStartWorkout}>{`Start ${nextDay} workout`}</Button>
+            </View>
+          ) : (
+            <View className="items-center gap-3 rounded-md border border-border bg-surface p-4">
+              <Text className="text-sm text-ink-muted">
+                No workouts in your rotation yet — add one via "Edit exercises".
+              </Text>
             </View>
           )}
 
@@ -258,9 +290,12 @@ export function WorkoutModuleView() {
         <Modal title="Edit exercises" onClose={() => setTemplateEditorOpen(false)}>
           <ScrollView style={{ maxHeight: 420 }}>
             <ExerciseTemplateEditor
+              days={days}
               templates={templates}
-              onCreate={handleCreateTemplate}
-              onDelete={(entry) => setDeleteTemplateTarget(entry)}
+              onCreateExercise={handleCreateTemplate}
+              onDeleteExercise={(entry) => setDeleteTemplateTarget(entry)}
+              onCreateDay={handleCreateDay}
+              onDeleteDay={(name) => setDeleteDayTarget(name)}
             />
           </ScrollView>
           <View className="mt-4 flex-row justify-end">
@@ -292,6 +327,15 @@ export function WorkoutModuleView() {
           confirmLabel="Delete"
           onConfirm={handleDeleteTemplate}
           onCancel={() => setDeleteTemplateTarget(null)}
+        />
+      )}
+      {deleteDayTarget && (
+        <ConfirmDialog
+          title="Remove workout"
+          message={`Remove "${deleteDayTarget}" from your rotation? This also deletes its exercises.`}
+          confirmLabel="Remove"
+          onConfirm={handleDeleteDay}
+          onCancel={() => setDeleteDayTarget(null)}
         />
       )}
     </View>

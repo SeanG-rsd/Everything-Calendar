@@ -7,6 +7,7 @@ const DEFAULT_MODULES: readonly (readonly [string, ModuleCategory])[] = [
   ['Homework', 'list'],
   ['Long-Term Goals', 'list'],
   ['Daily Diet', 'totals'],
+  ['Water', 'totals'],
   ['Daily Goals', 'totals'],
   ['Daily Workout', 'totals'],
   ['Savings Goals', 'totals'],
@@ -33,16 +34,24 @@ const DEFAULT_ENTRIES: Readonly<Record<string, readonly SeedEntry[]>> = {
     { status: 'active', payload: { title: 'Run a half marathon' } },
   ],
   'Daily Diet': [
+    { status: 'active', payload: { kind: 'goal', amount: 2000 } },
     { status: 'active', payload: { name: 'Banana', calories: 105 } },
     { status: 'active', payload: { name: 'Grilled chicken breast', calories: 231 } },
     { status: 'active', payload: { calories: 350 } },
   ],
+  Water: [
+    { status: 'active', payload: { kind: 'goal', amount: 2000 } },
+    { status: 'active', payload: { amountMl: 250 } },
+    { status: 'active', payload: { amountMl: 500 } },
+  ],
   'Daily Goals': [
     { status: 'active', payload: { title: 'Read 20 pages', target: 20, current: 20, unit: 'pages' } },
     { status: 'active', payload: { title: 'Meditate', target: 10, current: 5, unit: 'min' } },
-    { status: 'active', payload: { title: 'Drink water', target: 8, current: 6, unit: 'cups' } },
   ],
   'Daily Workout': [
+    { status: 'active', payload: { kind: 'day', name: 'Push' } },
+    { status: 'active', payload: { kind: 'day', name: 'Pull' } },
+    { status: 'active', payload: { kind: 'day', name: 'Legs' } },
     { status: 'active', payload: { kind: 'template', day: 'Push', title: 'Bench Press', targetSets: 3, targetReps: 8 } },
     { status: 'active', payload: { kind: 'template', day: 'Push', title: 'Overhead Press', targetSets: 3, targetReps: 8 } },
     {
@@ -76,5 +85,36 @@ export async function ensureDefaultModules(store: DataStore): Promise<void> {
     for (const seed of DEFAULT_ENTRIES[name] ?? []) {
       await store.insertEntry({ module_id: module.id, status: seed.status, payload: seed.payload });
     }
+  }
+}
+
+const ALL_ENTRIES_LIMIT = 10_000;
+
+/**
+ * One-time migration for installs that created their "Daily Workout" module
+ * before rotation days (payload.kind === 'day', see lib/workoutDays.ts)
+ * existed as their own entries — the day names used to live only implicitly,
+ * as the `day` field on template entries. Backfills a `day` entry for every
+ * distinct day name still referenced by a template so those workouts keep
+ * showing up in the rotation. No-ops once any `day` entry exists, so it never
+ * re-adds a day the user has since deleted.
+ */
+export async function ensureWorkoutDaySeeds(store: DataStore): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === 'Daily Workout');
+  if (!module) return;
+
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  if (entries.some((entry) => entry.payload.kind === 'day')) return;
+
+  const legacyDayNames: string[] = [];
+  for (const entry of entries) {
+    const day = entry.payload.day;
+    if (entry.payload.kind === 'template' && typeof day === 'string' && !legacyDayNames.includes(day)) {
+      legacyDayNames.push(day);
+    }
+  }
+
+  for (const name of legacyDayNames) {
+    await store.insertEntry({ module_id: module.id, status: 'active', payload: { kind: 'day', name } });
   }
 }

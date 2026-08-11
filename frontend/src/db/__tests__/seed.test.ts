@@ -1,8 +1,8 @@
-import { ensureDefaultModules } from '../seed';
+import { ensureDefaultModules, ensureWorkoutDaySeeds } from '../seed';
 import { createMemoryStore } from '../testUtils';
 
 describe('ensureDefaultModules', () => {
-  it('creates the 7 default modules with the correct name/category pairs', async () => {
+  it('creates the 8 default modules with the correct name/category pairs', async () => {
     const store = createMemoryStore();
     await ensureDefaultModules(store);
 
@@ -12,6 +12,7 @@ describe('ensureDefaultModules', () => {
       ['Homework', 'list'],
       ['Long-Term Goals', 'list'],
       ['Daily Diet', 'totals'],
+      ['Water', 'totals'],
       ['Daily Goals', 'totals'],
       ['Daily Workout', 'totals'],
       ['Savings Goals', 'totals'],
@@ -35,7 +36,7 @@ describe('ensureDefaultModules', () => {
     await ensureDefaultModules(store);
 
     const modules = await store.listModules();
-    expect(modules).toHaveLength(7);
+    expect(modules).toHaveLength(8);
   });
 
   it('does not re-seed entries for a module the user has emptied out', async () => {
@@ -53,5 +54,52 @@ describe('ensureDefaultModules', () => {
 
     const countAfter = await store.countEntriesForModule(tasksModule.id);
     expect(countAfter).toBe(0);
+  });
+});
+
+describe('ensureWorkoutDaySeeds', () => {
+  it('backfills a day entry for each distinct legacy template day name', async () => {
+    const store = createMemoryStore();
+    const module = await store.insertModule({ name: 'Daily Workout', category: 'totals' });
+    await store.insertEntry({
+      module_id: module.id,
+      payload: { kind: 'template', day: 'Push', title: 'Bench Press', targetSets: 3, targetReps: 8 },
+    });
+    await store.insertEntry({
+      module_id: module.id,
+      payload: { kind: 'template', day: 'Push', title: 'Overhead Press', targetSets: 3, targetReps: 8 },
+    });
+    await store.insertEntry({
+      module_id: module.id,
+      payload: { kind: 'template', day: 'Legs', title: 'Squat', targetSets: 3, targetReps: 5 },
+    });
+
+    await ensureWorkoutDaySeeds(store);
+
+    const entries = await store.listEntries({ module_id: module.id, limit: 100 });
+    const dayNames = entries.filter((e) => e.payload.kind === 'day').map((e) => e.payload.name);
+    expect(dayNames).toEqual(['Push', 'Legs']);
+  });
+
+  it('does not re-add a day the user has since deleted, once any day entry exists', async () => {
+    const store = createMemoryStore();
+    const module = await store.insertModule({ name: 'Daily Workout', category: 'totals' });
+    await store.insertEntry({
+      module_id: module.id,
+      payload: { kind: 'template', day: 'Push', title: 'Bench Press', targetSets: 3, targetReps: 8 },
+    });
+    // Simulates a user who already migrated and then deleted "Push" from the rotation.
+    await store.insertEntry({ module_id: module.id, payload: { kind: 'day', name: 'Pull' } });
+
+    await ensureWorkoutDaySeeds(store);
+
+    const entries = await store.listEntries({ module_id: module.id, limit: 100 });
+    const dayNames = entries.filter((e) => e.payload.kind === 'day').map((e) => e.payload.name);
+    expect(dayNames).toEqual(['Pull']);
+  });
+
+  it('does nothing when the Daily Workout module does not exist', async () => {
+    const store = createMemoryStore();
+    await expect(ensureWorkoutDaySeeds(store)).resolves.toBeUndefined();
   });
 });

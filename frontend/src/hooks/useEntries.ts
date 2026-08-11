@@ -58,3 +58,15 @@ export function useEntries({ moduleId, status, limit = 20, offset = 0 }: UseEntr
 
   return { entries, loading, error, refetch, create, update, remove };
 }
+
+/**
+ * Each useEntries() call owns its own local state with no cross-instance
+ * sync — fine when a module has exactly one consumer, but the Health tab
+ * fetches Diet/Water/Workout entries itself (for the weekly bar) *and*
+ * renders DietModuleView/WaterModuleView/WorkoutModuleView, which used to
+ * each call useEntries again independently. Logging water in the Water tab
+ * updated only that second, private copy, so the bar never saw it. Passing
+ * one shared controller down as a prop (see HealthTabView.tsx) fixes that by
+ * construction — there's only one piece of state to go stale.
+ */
+export type EntriesController = ReturnType<typeof useEntries>;

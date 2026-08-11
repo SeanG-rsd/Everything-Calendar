@@ -1,52 +1,122 @@
 import type { Entry } from '@/api/types';
+import { isToday, localDateKey } from '@/lib/dates';
+import { goalAmount, isGoalEntry } from '@/lib/goals';
+import { isHistoryEntry } from '@/lib/goalHistory';
+import { sumField } from '@/lib/logTotals';
+import { metricProgress } from '@/lib/totals';
 
 import type { DataStore } from './types';
 
 const DIET_MODULE_NAME = 'Daily Diet';
+const WATER_MODULE_NAME = 'Water';
 const GOALS_MODULE_NAME = 'Daily Goals';
+
+const LOGGED_AMOUNT_FIELD: Readonly<Record<string, string>> = {
+  [DIET_MODULE_NAME]: 'calories',
+  [WATER_MODULE_NAME]: 'amountMl',
+};
 
 const ALL_ENTRIES_LIMIT = 10_000;
 
-function localDateKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-}
+/**
+ * A module's `kind: 'goal'` entry (see lib/goals.ts) is persistent config,
+ * and a `kind: 'history'` entry (see lib/goalHistory.ts) is itself a
+ * snapshot record — neither is a logged-for-today item, so neither may ever
+ * be swept up by the date-based clear below.
+ *
+ * Before a stale day's logged entries are deleted, this records whether that
+ * day's total met the module's goal as a `kind: 'history'` entry (used by
+ * the Health tab's weekly bar — see lib/healthHistory.ts), grouped by the
+ * calendar day each entry was logged on (usually all the same day, but can
+ * span several if the app sat unopened). A day with no logged entries, or no
+ * goal set at the time of the snapshot, gets no snapshot at all — that's
+ * what lets the weekly bar render it as "no data" (gray) rather than "goal
+ * missed" (also gray, but a different underlying state).
+ */
+async function clearStaleLoggedEntries(store: DataStore, moduleName: string): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === moduleName);
+  if (!module) return;
 
-function isToday(isoString: string): boolean {
-  return localDateKey(new Date(isoString)) === localDateKey(new Date());
-}
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  const loggedEntries = entries.filter((entry) => !isGoalEntry(entry) && !isHistoryEntry(entry));
+  const staleEntries = loggedEntries.filter((entry) => !isToday(entry.created_at));
 
-async function clearDietEntries(store: DataStore, shouldClear: (entry: Entry) => boolean): Promise<void> {
-  const dietModule = (await store.listModules()).find((module) => module.name === DIET_MODULE_NAME);
-  if (!dietModule) return;
-
-  const entries = await store.listEntries({ module_id: dietModule.id, limit: ALL_ENTRIES_LIMIT });
-  for (const entry of entries) {
-    if (shouldClear(entry)) {
-      await store.deleteEntry(entry.id);
+  const field = LOGGED_AMOUNT_FIELD[moduleName];
+  const goal = field ? goalAmount(entries) : null;
+  if (field && goal != null && staleEntries.length > 0) {
+    const staleByDate = new Map<string, Entry[]>();
+    for (const entry of staleEntries) {
+      const date = localDateKey(new Date(entry.created_at));
+      const group = staleByDate.get(date) ?? [];
+      group.push(entry);
+      staleByDate.set(date, group);
     }
+
+    const alreadySnapshotted = new Set(entries.filter(isHistoryEntry).map((entry) => entry.payload.date));
+
+    for (const [date, group] of staleByDate) {
+      if (alreadySnapshotted.has(date)) continue;
+      const progress = Math.max(0, Math.min(1, sumField(group, field) / goal));
+      await store.insertEntry({ module_id: module.id, status: 'active', payload: { kind: 'history', date, progress } });
+    }
+  }
+
+  for (const entry of staleEntries) {
+    await store.deleteEntry(entry.id);
   }
 }
 
-async function resetGoalsProgress(store: DataStore, shouldReset: (entry: Entry) => boolean): Promise<void> {
+/**
+ * Before a stale Daily Goals metric gets its `current` zeroed for the new
+ * day, record that day's finalized average progress (see lib/goalHistory.ts)
+ * so the weekly progress bar has something to show for it. Stale entries are
+ * grouped by the calendar day they were last touched — usually all the same
+ * day (the last time the app was open), but they can span several if the app
+ * sat unopened for a while. Days with no entries at all (the app never
+ * having been opened) get no snapshot, which is what lets the weekly bar
+ * render them as "no data" instead of 0%.
+ */
+async function snapshotAndResetGoalsProgress(store: DataStore): Promise<void> {
   const goalsModule = (await store.listModules()).find((module) => module.name === GOALS_MODULE_NAME);
   if (!goalsModule) return;
 
   const entries = await store.listEntries({ module_id: goalsModule.id, limit: ALL_ENTRIES_LIMIT });
-  for (const entry of entries) {
+  const staleMetrics = entries.filter((entry) => !isHistoryEntry(entry) && !isToday(entry.updated_at));
+  if (staleMetrics.length === 0) return;
+
+  const staleByDate = new Map<string, Entry[]>();
+  for (const entry of staleMetrics) {
+    const date = localDateKey(new Date(entry.updated_at));
+    const group = staleByDate.get(date) ?? [];
+    group.push(entry);
+    staleByDate.set(date, group);
+  }
+
+  const alreadySnapshotted = new Set(
+    entries.filter(isHistoryEntry).map((entry) => entry.payload.date),
+  );
+
+  for (const [date, group] of staleByDate) {
+    if (alreadySnapshotted.has(date)) continue;
+    const progress = group.reduce((sum, entry) => sum + metricProgress(entry), 0) / group.length;
+    await store.insertEntry({ module_id: goalsModule.id, status: 'active', payload: { kind: 'history', date, progress } });
+  }
+
+  for (const entry of staleMetrics) {
     const current = typeof entry.payload.current === 'number' ? entry.payload.current : 0;
-    if (current !== 0 && shouldReset(entry)) {
-      await store.updateEntry(entry.id, { payload: { ...entry.payload, current: 0 } });
-    }
+    if (current === 0) continue;
+    await store.updateEntry(entry.id, { payload: { ...entry.payload, current: 0 } });
   }
 }
 
 /**
  * Runs once per app launch (see client.ts). "Daily" modules have no built-in
- * expiry — Daily Diet entries are logged food that should only count for the
- * day they were logged, and Daily Goals' `current` only ever changes via the
- * +/- buttons, so both would otherwise carry over indefinitely.
+ * expiry — Daily Diet/Water entries are logged items that should only count
+ * for the day they were logged, and Daily Goals' `current` only ever changes
+ * via the +/- buttons, so both would otherwise carry over indefinitely.
  */
 export async function resetStaleDailyProgress(store: DataStore): Promise<void> {
-  await clearDietEntries(store, (entry) => !isToday(entry.created_at));
-  await resetGoalsProgress(store, (entry) => !isToday(entry.updated_at));
+  await clearStaleLoggedEntries(store, DIET_MODULE_NAME);
+  await clearStaleLoggedEntries(store, WATER_MODULE_NAME);
+  await snapshotAndResetGoalsProgress(store);
 }

@@ -1,5 +1,7 @@
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
+import { isHistoryEntry, lastSevenDays } from '@/lib/goalHistory';
+import { metricProgress } from '@/lib/totals';
 import { useModulesContext } from '@/modules/ModulesContext';
 import { getModuleAccentKey } from '@/theme/moduleAccent';
 import { moduleClassNames } from '@/theme/moduleClassNames';
@@ -11,17 +13,11 @@ import { ErrorBanner } from '../ui/ErrorBanner';
 import { Modal } from '../ui/Modal';
 import { ProgressRing } from '../ui/ProgressRing';
 import { Spinner } from '../ui/Spinner';
+import { WeeklyProgressBar } from '../ui/WeeklyProgressBar';
 import { TotalsEntryForm, type TotalsEntryValues } from './TotalsEntryForm';
 
 interface TotalsModuleViewProps {
   moduleName: string;
-}
-
-function metricProgress(entry: Entry): number {
-  const target = entry.payload.target;
-  const current = entry.payload.current;
-  if (typeof target !== 'number' || target <= 0 || typeof current !== 'number') return 0;
-  return Math.max(0, Math.min(1, current / target));
 }
 
 function entryTitle(entry: Entry): string {
@@ -34,7 +30,14 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
   const accentKey = getModuleAccentKey(moduleName);
   const accentClasses = moduleClassNames[accentKey];
 
-  const { entries, loading, error, create, update, remove } = useEntries({ moduleId: module?.id });
+  // useEntries defaults to the oldest 20 entries (see hooks/useEntries.ts) — fine for
+  // modules that stay small, but Daily Goals gains one "history" entry per day forever
+  // (see lib/goalHistory.ts), so it needs enough headroom that the weekly bar and newly
+  // added metrics don't silently fall off the end after a few weeks.
+  const { entries, loading, error, create, update, remove } = useEntries({
+    moduleId: module?.id,
+    limit: moduleName === 'Daily Goals' ? 10_000 : 20,
+  });
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -58,10 +61,15 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
     );
   }
 
+  const metricEntries = entries.filter((entry) => !isHistoryEntry(entry));
   const overallProgress =
-    entries.length === 0
+    metricEntries.length === 0
       ? 0
-      : entries.reduce((sum, entry) => sum + metricProgress(entry), 0) / entries.length;
+      : metricEntries.reduce((sum, entry) => sum + metricProgress(entry), 0) / metricEntries.length;
+  const weekDays =
+    moduleName === 'Daily Goals'
+      ? lastSevenDays(entries, metricEntries.length === 0 ? null : overallProgress)
+      : null;
 
   function openCreate() {
     setEditingEntry(null);
@@ -113,6 +121,7 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
 
   return (
     <View className="flex-1 bg-background p-4">
+      {weekDays && <WeeklyProgressBar days={weekDays} />}
       <View className="mb-4 flex-row items-center justify-between">
         <Text className={`text-xl font-semibold ${accentClasses.text}`}>{moduleName}</Text>
         <Button accent={accentKey} onPress={openCreate}>
@@ -126,11 +135,11 @@ export function TotalsModuleView({ moduleName }: TotalsModuleViewProps) {
       <ErrorBanner message={pageError} />
       {loading ? (
         <Spinner />
-      ) : entries.length === 0 ? (
+      ) : metricEntries.length === 0 ? (
         <Text className="text-sm text-ink-muted">No metrics yet — add one above.</Text>
       ) : (
         <FlatList
-          data={entries}
+          data={metricEntries}
           keyExtractor={(entry) => String(entry.id)}
           contentContainerClassName="gap-2"
           renderItem={({ item }) => {

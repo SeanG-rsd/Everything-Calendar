@@ -18,9 +18,19 @@ export const colors = {
     medium: { default: '#F5D67A', subtle: '#332B15' },
     low: { default: '#8FDCA6', subtle: '#17301F' },
   },
+  water: { default: '#4FC3F7', strong: '#0288D1' },
+  progress: { red: '#F2555A', orange: '#F2925A', yellow: '#F5D67A', green: '#8FDCA6', gray: '#3A4152' },
 } as const;
 
-export type ModuleAccentKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial';
+export type ModuleAccentKey =
+  | 'tasks'
+  | 'goals'
+  | 'health'
+  | 'daily-goals'
+  | 'financial'
+  | 'diet'
+  | 'water'
+  | 'workout';
 
 export const moduleAccents: Record<ModuleAccentKey, { default: string; strong: string; subtle: string }> = {
   tasks: { default: '#7EB6FF', strong: '#4A90E2', subtle: '#16233A' },
@@ -28,4 +38,9 @@ export const moduleAccents: Record<ModuleAccentKey, { default: string; strong: s
   health: { default: '#FF9E7A', strong: '#F4784E', subtle: '#33221B' },
   'daily-goals': { default: '#F5D67A', strong: '#E0B94A', subtle: '#332B15' },
   financial: { default: '#8FDCA6', strong: '#4FBF77', subtle: '#17301F' },
+  // Each of these three matches its own third of the Health tab's weekly bar
+  // (see components/ui/WeeklyHealthBar.tsx) exactly, not just "health" generically.
+  diet: { default: '#F2555A', strong: '#D6484D', subtle: '#33191C' },
+  water: { default: '#4FC3F7', strong: '#0288D1', subtle: '#122A38' },
+  workout: { default: '#F2925A', strong: '#D5814F', subtle: '#332419' },
 };

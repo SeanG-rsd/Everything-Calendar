@@ -54,4 +54,28 @@ export const moduleClassNames: Record<ModuleAccentKey, ModuleClassSet> = {
     border: 'border-module-financial',
     borderStrong: 'border-module-financial-strong',
   },
+  diet: {
+    text: 'text-module-diet',
+    bg: 'bg-module-diet',
+    bgStrong: 'bg-module-diet-strong',
+    bgSubtle: 'bg-module-diet-subtle',
+    border: 'border-module-diet',
+    borderStrong: 'border-module-diet-strong',
+  },
+  water: {
+    text: 'text-module-water',
+    bg: 'bg-module-water',
+    bgStrong: 'bg-module-water-strong',
+    bgSubtle: 'bg-module-water-subtle',
+    border: 'border-module-water',
+    borderStrong: 'border-module-water-strong',
+  },
+  workout: {
+    text: 'text-module-workout',
+    bg: 'bg-module-workout',
+    bgStrong: 'bg-module-workout-strong',
+    bgSubtle: 'bg-module-workout-subtle',
+    border: 'border-module-workout',
+    borderStrong: 'border-module-workout-strong',
+  },
 };
