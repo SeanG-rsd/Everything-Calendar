@@ -7,6 +7,7 @@ import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
@@ -15,11 +16,13 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <ErrorBoundary>
-        <Slot />
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <ErrorBoundary>
+          <Slot />
+        </ErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

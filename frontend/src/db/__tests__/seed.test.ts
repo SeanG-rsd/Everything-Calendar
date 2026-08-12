@@ -1,4 +1,4 @@
-import { ensureDefaultModules, ensureWorkoutDaySeeds } from '../seed';
+import { ensureDefaultModules, ensureDefaultTabPreferences, ensureWorkoutDaySeeds } from '../seed';
 import { createMemoryStore } from '../testUtils';
 
 describe('ensureDefaultModules', () => {
@@ -101,5 +101,64 @@ describe('ensureWorkoutDaySeeds', () => {
   it('does nothing when the Daily Workout module does not exist', async () => {
     const store = createMemoryStore();
     await expect(ensureWorkoutDaySeeds(store)).resolves.toBeUndefined();
+  });
+});
+
+describe('ensureDefaultTabPreferences', () => {
+  it('seeds the 5 default tab preferences with the correct starting placement/order', async () => {
+    const store = createMemoryStore();
+    await ensureDefaultTabPreferences(store);
+
+    const preferences = await store.listTabPreferences();
+    expect(preferences.map((p) => [p.tab_key, p.in_bottom_nav, p.sort_order])).toEqual([
+      ['tasks', true, 0],
+      ['health', true, 1],
+      ['daily-goals', true, 2],
+      ['financial', true, 3],
+      ['goals', false, 4],
+    ]);
+  });
+
+  it('does not reset a user-customized order when run again', async () => {
+    const store = createMemoryStore();
+    await ensureDefaultTabPreferences(store);
+
+    await store.saveTabPreferences([
+      { tab_key: 'goals', in_bottom_nav: true, sort_order: 0 },
+      { tab_key: 'tasks', in_bottom_nav: true, sort_order: 1 },
+      { tab_key: 'health', in_bottom_nav: false, sort_order: 2 },
+      { tab_key: 'daily-goals', in_bottom_nav: true, sort_order: 3 },
+      { tab_key: 'financial', in_bottom_nav: false, sort_order: 4 },
+    ]);
+
+    await ensureDefaultTabPreferences(store);
+
+    const preferences = await store.listTabPreferences();
+    expect(preferences.map((p) => [p.tab_key, p.in_bottom_nav, p.sort_order])).toEqual([
+      ['goals', true, 0],
+      ['tasks', true, 1],
+      ['health', false, 2],
+      ['daily-goals', true, 3],
+      ['financial', false, 4],
+    ]);
+  });
+
+  it('seeds only missing keys, leaving existing rows untouched', async () => {
+    const store = createMemoryStore();
+    await store.saveTabPreferences([
+      { tab_key: 'tasks', in_bottom_nav: false, sort_order: 7 },
+      { tab_key: 'goals', in_bottom_nav: true, sort_order: 2 },
+    ]);
+
+    await ensureDefaultTabPreferences(store);
+
+    const preferences = await store.listTabPreferences();
+    const byKey = new Map(preferences.map((p) => [p.tab_key, p]));
+    expect(byKey.get('tasks')).toMatchObject({ in_bottom_nav: false, sort_order: 7 });
+    expect(byKey.get('goals')).toMatchObject({ in_bottom_nav: true, sort_order: 2 });
+    expect(byKey.get('health')).toMatchObject({ in_bottom_nav: true, sort_order: 1 });
+    expect(byKey.get('daily-goals')).toMatchObject({ in_bottom_nav: true, sort_order: 2 });
+    expect(byKey.get('financial')).toMatchObject({ in_bottom_nav: true, sort_order: 3 });
+    expect(preferences).toHaveLength(5);
   });
 });

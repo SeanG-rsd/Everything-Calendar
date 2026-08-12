@@ -1,10 +1,10 @@
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
-import { TotalsModuleView } from '@/components/modules/TotalsModuleView';
+import { TabContent } from '@/tabs/TabContent';
 
 export default function DailyGoalsScreen() {
   return (
     <SafeAreaScreen>
-      <TotalsModuleView moduleName="Daily Goals" />
+      <TabContent tabKey="daily-goals" />
     </SafeAreaScreen>
   );
 }

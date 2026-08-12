@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as SQLite from 'expo-sqlite';
 
-import type { Entry, EntryListParams, Module } from '@/api/types';
+import type { Entry, EntryListParams, Module, TabKey, TabPreference, TabPreferenceUpsert } from '@/api/types';
 
 import { SCHEMA_SQL } from './schema';
 import type { DataStore, EntryInsert, EntryPatch, ModuleInsert } from './types';
@@ -24,6 +24,13 @@ interface EntryRawRow {
   updated_at: string;
 }
 
+interface TabPreferenceRawRow {
+  tab_key: string;
+  in_bottom_nav: number;
+  sort_order: number;
+  updated_at: string;
+}
+
 function toModule(row: ModuleRawRow): Module {
   return {
     id: row.id,
@@ -42,6 +49,15 @@ function toEntry(row: EntryRawRow): Entry {
     status: row.status,
     payload: JSON.parse(row.payload),
     created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function toTabPreference(row: TabPreferenceRawRow): TabPreference {
+  return {
+    tab_key: row.tab_key as TabKey,
+    in_bottom_nav: row.in_bottom_nav === 1,
+    sort_order: row.sort_order,
     updated_at: row.updated_at,
   };
 }
@@ -152,6 +168,34 @@ export function createSqliteStore(db: SQLiteDatabase): DataStore {
 
     async deleteEntry(id) {
       await db.runAsync('DELETE FROM entries WHERE id = ?', [id]);
+    },
+
+    async listTabPreferences() {
+      const rows = await db.getAllAsync<TabPreferenceRawRow>(
+        'SELECT * FROM tab_preferences ORDER BY sort_order',
+      );
+      return rows.map(toTabPreference);
+    },
+
+    async saveTabPreferences(items: TabPreferenceUpsert[]) {
+      const updatedAt = nowIso();
+      await db.withTransactionAsync(async () => {
+        for (const item of items) {
+          await db.runAsync(
+            `INSERT INTO tab_preferences (tab_key, in_bottom_nav, sort_order, updated_at)
+             VALUES (?, ?, ?, ?)
+             ON CONFLICT(tab_key) DO UPDATE SET
+               in_bottom_nav = excluded.in_bottom_nav,
+               sort_order = excluded.sort_order,
+               updated_at = excluded.updated_at`,
+            [item.tab_key, item.in_bottom_nav ? 1 : 0, item.sort_order, updatedAt],
+          );
+        }
+      });
+      const rows = await db.getAllAsync<TabPreferenceRawRow>(
+        'SELECT * FROM tab_preferences ORDER BY sort_order',
+      );
+      return rows.map(toTabPreference);
     },
   };
 }

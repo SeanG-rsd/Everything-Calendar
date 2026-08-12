@@ -1,4 +1,4 @@
-import type { Entry, EntryListParams, Module } from '@/api/types';
+import type { Entry, EntryListParams, Module, TabPreference, TabPreferenceUpsert } from '@/api/types';
 
 import type { DataStore, EntryInsert, EntryPatch, ModuleInsert } from './types';
 
@@ -11,6 +11,7 @@ import type { DataStore, EntryInsert, EntryPatch, ModuleInsert } from './types';
 export function createMemoryStore(now: () => Date = () => new Date()): DataStore {
   let modules: Module[] = [];
   let entries: Entry[] = [];
+  let tabPreferences: TabPreference[] = [];
   let nextModuleId = 1;
   let nextEntryId = 1;
 
@@ -91,6 +92,18 @@ export function createMemoryStore(now: () => Date = () => new Date()): DataStore
 
     async deleteEntry(id) {
       entries = entries.filter((e) => e.id !== id);
+    },
+
+    async listTabPreferences() {
+      return tabPreferences.slice().sort((a, b) => a.sort_order - b.sort_order);
+    },
+
+    async saveTabPreferences(items: TabPreferenceUpsert[]) {
+      const updatedAt = now().toISOString();
+      const byKey = new Map(tabPreferences.map((p) => [p.tab_key, p]));
+      for (const item of items) byKey.set(item.tab_key, { ...item, updated_at: updatedAt });
+      tabPreferences = Array.from(byKey.values());
+      return tabPreferences.slice().sort((a, b) => a.sort_order - b.sort_order);
     },
   };
 }

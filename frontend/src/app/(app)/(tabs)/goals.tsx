@@ -1,10 +1,10 @@
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
-import { ChecklistModuleView } from '@/components/modules/ChecklistModuleView';
+import { TabContent } from '@/tabs/TabContent';
 
 export default function LongTermGoalsScreen() {
   return (
     <SafeAreaScreen>
-      <ChecklistModuleView moduleName="Long-Term Goals" />
+      <TabContent tabKey="goals" />
     </SafeAreaScreen>
   );
 }

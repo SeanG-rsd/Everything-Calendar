@@ -78,4 +78,12 @@ export const moduleClassNames: Record<ModuleAccentKey, ModuleClassSet> = {
     border: 'border-module-workout',
     borderStrong: 'border-module-workout-strong',
   },
+  other: {
+    text: 'text-module-other',
+    bg: 'bg-module-other',
+    bgStrong: 'bg-module-other-strong',
+    bgSubtle: 'bg-module-other-subtle',
+    border: 'border-module-other',
+    borderStrong: 'border-module-other-strong',
+  },
 };

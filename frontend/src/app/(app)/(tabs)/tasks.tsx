@@ -1,10 +1,10 @@
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
-import { TasksTabView } from '@/components/modules/TasksTabView';
+import { TabContent } from '@/tabs/TabContent';
 
 export default function TasksScreen() {
   return (
     <SafeAreaScreen>
-      <TasksTabView />
+      <TabContent tabKey="tasks" />
     </SafeAreaScreen>
   );
 }

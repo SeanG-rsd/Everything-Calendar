@@ -30,7 +30,8 @@ export type ModuleAccentKey =
   | 'financial'
   | 'diet'
   | 'water'
-  | 'workout';
+  | 'workout'
+  | 'other';
 
 export const moduleAccents: Record<ModuleAccentKey, { default: string; strong: string; subtle: string }> = {
   tasks: { default: '#7EB6FF', strong: '#4A90E2', subtle: '#16233A' },
@@ -43,4 +44,7 @@ export const moduleAccents: Record<ModuleAccentKey, { default: string; strong: s
   diet: { default: '#F2555A', strong: '#D6484D', subtle: '#33191C' },
   water: { default: '#4FC3F7', strong: '#0288D1', subtle: '#122A38' },
   workout: { default: '#F2925A', strong: '#D5814F', subtle: '#332419' },
+  // Muted slate, deliberately distinct from the content-module hues above —
+  // "Other" is a meta/settings tab, not a module.
+  other: { default: '#9AA5B8', strong: '#7C8AA3', subtle: '#232838' },
 };

@@ -50,4 +50,40 @@ describe('DataStore contract (validated against the in-memory implementation)', 
     await store.deleteEntry(created.id);
     expect(await store.getEntry(created.id)).toBeNull();
   });
+
+  it('saveTabPreferences persists and a subsequent listTabPreferences reflects the new order', async () => {
+    const store = createMemoryStore();
+    await store.saveTabPreferences([
+      { tab_key: 'tasks', in_bottom_nav: true, sort_order: 0 },
+      { tab_key: 'goals', in_bottom_nav: false, sort_order: 1 },
+    ]);
+
+    const preferences = await store.listTabPreferences();
+    expect(preferences.map((p) => [p.tab_key, p.in_bottom_nav, p.sort_order])).toEqual([
+      ['tasks', true, 0],
+      ['goals', false, 1],
+    ]);
+  });
+
+  it('saveTabPreferences upserts by tab_key without creating duplicate rows', async () => {
+    const store = createMemoryStore();
+    await store.saveTabPreferences([{ tab_key: 'tasks', in_bottom_nav: true, sort_order: 0 }]);
+    await store.saveTabPreferences([{ tab_key: 'tasks', in_bottom_nav: false, sort_order: 3 }]);
+
+    const preferences = await store.listTabPreferences();
+    expect(preferences).toHaveLength(1);
+    expect(preferences[0]).toMatchObject({ tab_key: 'tasks', in_bottom_nav: false, sort_order: 3 });
+  });
+
+  it('listTabPreferences returns rows ordered by sort_order ascending regardless of write order', async () => {
+    const store = createMemoryStore();
+    await store.saveTabPreferences([
+      { tab_key: 'financial', in_bottom_nav: true, sort_order: 2 },
+      { tab_key: 'tasks', in_bottom_nav: true, sort_order: 0 },
+      { tab_key: 'goals', in_bottom_nav: false, sort_order: 1 },
+    ]);
+
+    const preferences = await store.listTabPreferences();
+    expect(preferences.map((p) => p.tab_key)).toEqual(['tasks', 'goals', 'financial']);
+  });
 });

@@ -28,6 +28,7 @@ module.exports = {
           diet: { DEFAULT: '#F2555A', strong: '#D6484D', subtle: '#33191C' },
           water: { DEFAULT: '#4FC3F7', strong: '#0288D1', subtle: '#122A38' },
           workout: { DEFAULT: '#F2925A', strong: '#D5814F', subtle: '#332419' },
+          other: { DEFAULT: '#9AA5B8', strong: '#7C8AA3', subtle: '#232838' },
         },
         progress: {
           red: '#F2555A',

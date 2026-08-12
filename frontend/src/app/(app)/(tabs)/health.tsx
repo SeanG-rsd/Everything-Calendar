@@ -1,10 +1,10 @@
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
-import { HealthTabView } from '@/components/modules/HealthTabView';
+import { TabContent } from '@/tabs/TabContent';
 
 export default function HealthScreen() {
   return (
     <SafeAreaScreen>
-      <HealthTabView />
+      <TabContent tabKey="health" />
     </SafeAreaScreen>
   );
 }

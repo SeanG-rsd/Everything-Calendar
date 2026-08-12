@@ -1,4 +1,11 @@
-import type { Entry, EntryListParams, Module, ModuleCategory } from '@/api/types';
+import type {
+  Entry,
+  EntryListParams,
+  Module,
+  ModuleCategory,
+  TabPreference,
+  TabPreferenceUpsert,
+} from '@/api/types';
 
 export interface ModuleInsert {
   name: string;
@@ -29,4 +36,7 @@ export interface DataStore {
   getEntry(id: number): Promise<Entry | null>;
   updateEntry(id: number, patch: EntryPatch): Promise<Entry>;
   deleteEntry(id: number): Promise<void>;
+
+  listTabPreferences(): Promise<TabPreference[]>;
+  saveTabPreferences(items: TabPreferenceUpsert[]): Promise<TabPreference[]>;
 }

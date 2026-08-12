@@ -19,4 +19,11 @@ CREATE TABLE IF NOT EXISTS entries (
 
 CREATE INDEX IF NOT EXISTS idx_entries_module_id ON entries(module_id);
 CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
+
+CREATE TABLE IF NOT EXISTS tab_preferences (
+  tab_key TEXT PRIMARY KEY,
+  in_bottom_nav INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL,
+  updated_at TEXT NOT NULL
+);
 `;

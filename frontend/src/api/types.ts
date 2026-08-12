@@ -35,3 +35,18 @@ export interface EntryListParams {
   limit?: number;
   offset?: number;
 }
+
+export type TabKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial';
+
+export interface TabPreference {
+  tab_key: TabKey;
+  in_bottom_nav: boolean;
+  sort_order: number;
+  updated_at: string;
+}
+
+export interface TabPreferenceUpsert {
+  tab_key: TabKey;
+  in_bottom_nav: boolean;
+  sort_order: number;
+}

@@ -1,10 +1,10 @@
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
-import { SavingsModuleView } from '@/components/modules/SavingsModuleView';
+import { TabContent } from '@/tabs/TabContent';
 
 export default function FinancialScreen() {
   return (
     <SafeAreaScreen>
-      <SavingsModuleView />
+      <TabContent tabKey="financial" />
     </SafeAreaScreen>
   );
 }

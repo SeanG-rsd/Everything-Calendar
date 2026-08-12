@@ -1,4 +1,5 @@
 import type { ModuleCategory } from '@/api/types';
+import { TAB_DEFINITIONS } from '@/lib/tabs';
 
 import type { DataStore } from './types';
 
@@ -86,6 +87,27 @@ export async function ensureDefaultModules(store: DataStore): Promise<void> {
       await store.insertEntry({ module_id: module.id, status: seed.status, payload: seed.payload });
     }
   }
+}
+
+/**
+ * Idempotent by tab_key (mirrors ensureDefaultModules): only fills in tabs
+ * that don't have a preference row yet, so a future new tab backfills its
+ * default placement without disturbing a user's already-customized layout.
+ */
+export async function ensureDefaultTabPreferences(store: DataStore): Promise<void> {
+  const existing = await store.listTabPreferences();
+  const existingKeys = new Set(existing.map((p) => p.tab_key));
+  const missing = TAB_DEFINITIONS.filter((def) => !existingKeys.has(def.key));
+  if (missing.length === 0) return;
+
+  await store.saveTabPreferences([
+    ...existing.map((p) => ({ tab_key: p.tab_key, in_bottom_nav: p.in_bottom_nav, sort_order: p.sort_order })),
+    ...missing.map((def) => ({
+      tab_key: def.key,
+      in_bottom_nav: def.defaultInBottomNav,
+      sort_order: def.defaultSortOrder,
+    })),
+  ]);
 }
 
 const ALL_ENTRIES_LIMIT = 10_000;
