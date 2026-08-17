@@ -12,14 +12,14 @@ import { WeightTabView } from '@/components/modules/WeightTabView';
  * tab's own screen file and the tab-modal route (used when a tab that isn't
  * in the bottom nav is opened from Other), so the two never drift apart.
  */
-export function TabContent({ tabKey }: { tabKey: TabKey }) {
+export function TabContent({ tabKey, action }: { tabKey: TabKey; action?: string }) {
   switch (tabKey) {
     case 'tasks':
       return <TasksTabView />;
     case 'goals':
       return <ChecklistModuleView moduleName="Long-Term Goals" />;
     case 'health':
-      return <HealthTabView />;
+      return <HealthTabView action={action} />;
     case 'daily-goals':
       return <TotalsModuleView moduleName="Daily Goals" />;
     case 'financial':

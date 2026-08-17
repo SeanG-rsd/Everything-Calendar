@@ -16,7 +16,7 @@ import { WorkoutModuleView } from './WorkoutModuleView';
 // same reason TotalsModuleView bumps its own fetch for Daily Goals.
 const ALL_ENTRIES_LIMIT = 10_000;
 
-export function HealthTabView() {
+export function HealthTabView({ action }: { action?: string }) {
   const { findByName, loading: modulesLoading } = useModulesContext();
 
   const diet = useEntries({ moduleId: findByName('Daily Diet')?.id, limit: ALL_ENTRIES_LIMIT });
@@ -61,7 +61,12 @@ export function HealthTabView() {
       <SegmentedModulesView
         accent="health"
         sections={[
-          { name: 'Daily Diet', label: 'Diet', accent: 'diet', render: () => <DietModuleView entries={diet} /> },
+          {
+            name: 'Daily Diet',
+            label: 'Diet',
+            accent: 'diet',
+            render: () => <DietModuleView entries={diet} autoOpenAdd={action === 'addFood'} />,
+          },
           { name: 'Water', label: 'Water', accent: 'water', render: () => <WaterModuleView entries={water} /> },
           {
             name: 'Daily Workout',

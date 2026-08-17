@@ -5,7 +5,7 @@
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "everythingcalendar",
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "com.nutronlabs.EverythingCalendar",
@@ -40,7 +40,16 @@
         }
       ],
       "expo-sqlite",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ],
+      "./plugins/withAppIntents"
     ],
     "experiments": {
       "typedRoutes": true,

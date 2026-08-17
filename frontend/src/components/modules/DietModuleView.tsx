@@ -5,7 +5,7 @@ import { findGoalEntry, goalAmount, isGoalEntry } from '@/lib/goals';
 import { useModulesContext } from '@/modules/ModulesContext';
 import { getModuleAccentKey } from '@/theme/moduleAccent';
 import { moduleClassNames } from '@/theme/moduleClassNames';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -32,9 +32,11 @@ function entryName(entry: Entry): string {
 
 interface DietModuleViewProps {
   entries: EntriesController;
+  /** Auto-opens the Add-food modal on mount, e.g. from the "Log Food" Shortcut deep link. */
+  autoOpenAdd?: boolean;
 }
 
-export function DietModuleView({ entries: entriesController }: DietModuleViewProps) {
+export function DietModuleView({ entries: entriesController, autoOpenAdd }: DietModuleViewProps) {
   const { findByName, loading: modulesLoading, error: modulesError } = useModulesContext();
   const module = findByName(MODULE_NAME);
 
@@ -46,6 +48,10 @@ export function DietModuleView({ entries: entriesController }: DietModuleViewPro
   const [deleteTarget, setDeleteTarget] = useState<Entry | null>(null);
   const [goalFormOpen, setGoalFormOpen] = useState(false);
   const [goalFormError, setGoalFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (autoOpenAdd) setFormOpen(true);
+  }, [autoOpenAdd]);
 
   if (modulesLoading) {
     return (

@@ -8,7 +8,7 @@ import { Pressable, Text, View } from 'react-native';
 
 export default function TabModalScreen() {
   const router = useRouter();
-  const { key } = useLocalSearchParams<{ key: string }>();
+  const { key, action } = useLocalSearchParams<{ key: string; action?: string }>();
   const def = TAB_DEFINITIONS.find((candidate) => candidate.key === key);
 
   return (
@@ -19,7 +19,7 @@ export default function TabModalScreen() {
           <Ionicons name="close" size={24} color={colors.inkMuted} />
         </Pressable>
       </View>
-      {def && <TabContent tabKey={def.key} />}
+      {def && <TabContent tabKey={def.key} action={action} />}
     </SafeAreaScreen>
   );
 }
