@@ -36,7 +36,7 @@ export interface EntryListParams {
   offset?: number;
 }
 
-export type TabKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial';
+export type TabKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial' | 'projects' | 'weight';
 
 export interface TabPreference {
   tab_key: TabKey;

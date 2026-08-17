@@ -230,4 +230,169 @@ describe('resetStaleDailyProgress', () => {
     expect(history).toHaveLength(1);
     expect(history[0].payload.progress).toBe(0.33);
   });
+
+  it.each(['To-Dos', 'Homework'])(
+    'deletes a %s item done on a previous day, keeping items done today and items still active',
+    async (moduleName) => {
+      let clock = daysAgo(1);
+      const store = createMemoryStore(() => clock);
+      const module = await store.insertModule({ name: moduleName, category: 'list' });
+      const doneYesterday = await store.insertEntry({
+        module_id: module.id,
+        status: 'done',
+        payload: { title: 'Done yesterday' },
+      });
+      const stillActive = await store.insertEntry({
+        module_id: module.id,
+        status: 'active',
+        payload: { title: 'Still active' },
+      });
+
+      clock = new Date();
+      const doneToday = await store.insertEntry({
+        module_id: module.id,
+        status: 'done',
+        payload: { title: 'Done today' },
+      });
+
+      await resetStaleDailyProgress(store);
+
+      const remaining = await store.listEntries({ module_id: module.id, limit: 100 });
+      expect(remaining.map((e) => e.id).sort()).toEqual([stillActive.id, doneToday.id].sort());
+      expect(await store.getEntry(doneYesterday.id)).toBeNull();
+    },
+  );
+
+  it('never deletes a "section" entry in To-Dos/Homework, even if somehow marked done', async () => {
+    const clock = daysAgo(30);
+    const store = createMemoryStore(() => clock);
+    const todos = await store.insertModule({ name: 'To-Dos', category: 'list' });
+    const section = await store.insertEntry({
+      module_id: todos.id,
+      status: 'done',
+      payload: { kind: 'section', name: 'Errands' },
+    });
+
+    await resetStaleDailyProgress(store);
+
+    expect(await store.getEntry(section.id)).not.toBeNull();
+  });
+
+  it("deletes a Projects 'task' entry done on a previous day, but never a 'project' entry", async () => {
+    let clock = daysAgo(1);
+    const store = createMemoryStore(() => clock);
+    const projects = await store.insertModule({ name: 'Projects', category: 'list' });
+    const project = await store.insertEntry({
+      module_id: projects.id,
+      status: 'done',
+      payload: { kind: 'project', title: 'Everything Calendar' },
+    });
+    const doneYesterday = await store.insertEntry({
+      module_id: projects.id,
+      status: 'done',
+      payload: { kind: 'task', projectId: project.id, title: 'Done yesterday' },
+    });
+
+    clock = new Date();
+    await resetStaleDailyProgress(store);
+
+    expect(await store.getEntry(project.id)).not.toBeNull();
+    expect(await store.getEntry(doneYesterday.id)).toBeNull();
+  });
+
+  it("archives (does not delete) a done project from a previous month, leaving its tasks untouched", async () => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+
+    let clock = lastMonth;
+    const store = createMemoryStore(() => clock);
+    const projects = await store.insertModule({ name: 'Projects', category: 'list' });
+    const project = await store.insertEntry({
+      module_id: projects.id,
+      status: 'done',
+      payload: { kind: 'project', title: 'Old project', description: '', notes: '' },
+    });
+    const task = await store.insertEntry({
+      module_id: projects.id,
+      status: 'active',
+      payload: { kind: 'task', projectId: project.id, title: 'Leftover task' },
+    });
+
+    clock = now;
+    await resetStaleDailyProgress(store);
+
+    const archivedProject = await store.getEntry(project.id);
+    expect(archivedProject).not.toBeNull();
+    expect(archivedProject!.status).toBe('done');
+    expect(archivedProject!.payload.archived).toBe(true);
+    expect(await store.getEntry(task.id)).not.toBeNull();
+  });
+
+  it('does not archive a project done earlier this month, or one that is not done at all', async () => {
+    const now = new Date();
+    const store = createMemoryStore(() => now);
+    const projects = await store.insertModule({ name: 'Projects', category: 'list' });
+    const doneThisMonth = await store.insertEntry({
+      module_id: projects.id,
+      status: 'done',
+      payload: { kind: 'project', title: 'Done this month' },
+    });
+    const inProgress = await store.insertEntry({
+      module_id: projects.id,
+      status: 'in-progress',
+      payload: { kind: 'project', title: 'Still going' },
+    });
+
+    await resetStaleDailyProgress(store);
+
+    expect((await store.getEntry(doneThisMonth.id))!.payload.archived).toBeUndefined();
+    expect((await store.getEntry(inProgress.id))!.payload.archived).toBeUndefined();
+  });
+
+  it('does not re-archive (or otherwise touch) a project already archived', async () => {
+    const clock = new Date(2020, 0, 1);
+    const store = createMemoryStore(() => clock);
+    const projects = await store.insertModule({ name: 'Projects', category: 'list' });
+    const alreadyArchived = await store.insertEntry({
+      module_id: projects.id,
+      status: 'done',
+      payload: { kind: 'project', title: 'Old news', archived: true },
+    });
+
+    await resetStaleDailyProgress(store);
+
+    expect((await store.getEntry(alreadyArchived.id))!.payload).toEqual({
+      kind: 'project',
+      title: 'Old news',
+      archived: true,
+    });
+  });
+
+  it('does not delete a Long-Term Goals item done earlier this month, only one done in a previous month', async () => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+    const earlierThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let clock = lastMonth;
+    const store = createMemoryStore(() => clock);
+    const goals = await store.insertModule({ name: 'Long-Term Goals', category: 'list' });
+    const doneLastMonth = await store.insertEntry({
+      module_id: goals.id,
+      status: 'done',
+      payload: { title: 'Done last month' },
+    });
+
+    clock = earlierThisMonth;
+    const doneThisMonth = await store.insertEntry({
+      module_id: goals.id,
+      status: 'done',
+      payload: { title: 'Done earlier this month' },
+    });
+
+    clock = now;
+    await resetStaleDailyProgress(store);
+
+    expect(await store.getEntry(doneLastMonth.id)).toBeNull();
+    expect(await store.getEntry(doneThisMonth.id)).not.toBeNull();
+  });
 });

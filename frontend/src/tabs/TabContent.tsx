@@ -1,9 +1,11 @@
 import type { TabKey } from '@/api/types';
 import { ChecklistModuleView } from '@/components/modules/ChecklistModuleView';
 import { HealthTabView } from '@/components/modules/HealthTabView';
+import { ProjectsTabView } from '@/components/modules/ProjectsTabView';
 import { SavingsModuleView } from '@/components/modules/SavingsModuleView';
 import { TasksTabView } from '@/components/modules/TasksTabView';
 import { TotalsModuleView } from '@/components/modules/TotalsModuleView';
+import { WeightTabView } from '@/components/modules/WeightTabView';
 
 /**
  * Single place that maps a tab key to the view it renders — shared by each
@@ -22,5 +24,9 @@ export function TabContent({ tabKey }: { tabKey: TabKey }) {
       return <TotalsModuleView moduleName="Daily Goals" />;
     case 'financial':
       return <SavingsModuleView />;
+    case 'projects':
+      return <ProjectsTabView />;
+    case 'weight':
+      return <WeightTabView />;
   }
 }

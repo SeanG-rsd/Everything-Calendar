@@ -1,5 +1,5 @@
 import type { Entry } from '@/api/types';
-import { isToday, localDateKey } from '@/lib/dates';
+import { isThisMonth, isToday, localDateKey } from '@/lib/dates';
 import { goalAmount, isGoalEntry } from '@/lib/goals';
 import { isHistoryEntry } from '@/lib/goalHistory';
 import { sumField } from '@/lib/logTotals';
@@ -10,6 +10,9 @@ import type { DataStore } from './types';
 const DIET_MODULE_NAME = 'Daily Diet';
 const WATER_MODULE_NAME = 'Water';
 const GOALS_MODULE_NAME = 'Daily Goals';
+const TODO_LIST_MODULE_NAMES = ['To-Dos', 'Homework'];
+const PROJECTS_MODULE_NAME = 'Projects';
+const LONG_TERM_GOALS_MODULE_NAME = 'Long-Term Goals';
 
 const LOGGED_AMOUNT_FIELD: Readonly<Record<string, string>> = {
   [DIET_MODULE_NAME]: 'calories',
@@ -110,13 +113,96 @@ async function snapshotAndResetGoalsProgress(store: DataStore): Promise<void> {
 }
 
 /**
+ * A `done` to-do/task is only useful as a "yes, I finished this" confirmation
+ * for the rest of the day it was completed on — once a new day starts, it's
+ * just clutter. Keyed off `updated_at` (bumped every time status changes), so
+ * something finished today survives until the app is next opened on a later
+ * day, same idea as clearStaleLoggedEntries above.
+ */
+async function clearCompletedTodos(store: DataStore, moduleName: string): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === moduleName);
+  if (!module) return;
+
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  for (const entry of entries) {
+    if (entry.payload.kind === 'section') continue; // organizational, never itself completable
+    if (entry.status === 'done' && !isToday(entry.updated_at)) {
+      await store.deleteEntry(entry.id);
+    }
+  }
+}
+
+/** Same idea as clearCompletedTodos, but scoped to a project's `kind: 'task'` entries only — the
+ * `kind: 'project'` entries sharing that module are never swept by this. */
+async function clearCompletedProjectTasks(store: DataStore): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === PROJECTS_MODULE_NAME);
+  if (!module) return;
+
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  for (const entry of entries) {
+    if (entry.payload.kind !== 'task') continue;
+    if (entry.status === 'done' && !isToday(entry.updated_at)) {
+      await store.deleteEntry(entry.id);
+    }
+  }
+}
+
+/**
+ * Long-Term Goals are aspirational, not day-scoped tasks, so a finished one
+ * is worth leaving checked off for longer than a to-do — swept monthly
+ * instead of daily.
+ */
+async function clearCompletedLongTermGoals(store: DataStore): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === LONG_TERM_GOALS_MODULE_NAME);
+  if (!module) return;
+
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  for (const entry of entries) {
+    if (entry.status === 'done' && !isThisMonth(entry.updated_at)) {
+      await store.deleteEntry(entry.id);
+    }
+  }
+}
+
+/**
+ * Unlike Long-Term Goals, a project that's been `done` past the calendar
+ * month it was finished in is archived (payload.archived = true) rather than
+ * deleted — its tasks are left untouched, still reachable via the project's
+ * own detail screen once it's surfaced in the Projects tab's Archived
+ * section (see lib/projects.ts isProjectArchived / ProjectsTabView).
+ */
+async function archiveCompletedProjects(store: DataStore): Promise<void> {
+  const module = (await store.listModules()).find((m) => m.name === PROJECTS_MODULE_NAME);
+  if (!module) return;
+
+  const entries = await store.listEntries({ module_id: module.id, limit: ALL_ENTRIES_LIMIT });
+  for (const entry of entries) {
+    if (entry.payload.kind !== 'project') continue;
+    if (entry.payload.archived === true) continue;
+    if (entry.status === 'done' && !isThisMonth(entry.updated_at)) {
+      await store.updateEntry(entry.id, { payload: { ...entry.payload, archived: true } });
+    }
+  }
+}
+
+/**
  * Runs once per app launch (see client.ts). "Daily" modules have no built-in
  * expiry — Daily Diet/Water entries are logged items that should only count
  * for the day they were logged, and Daily Goals' `current` only ever changes
  * via the +/- buttons, so both would otherwise carry over indefinitely.
+ * Also sweeps completed to-do/task items (daily), archives completed
+ * projects (monthly), and clears completed Long-Term Goals (monthly) — see
+ * clearCompletedTodos, archiveCompletedProjects, and
+ * clearCompletedLongTermGoals above.
  */
 export async function resetStaleDailyProgress(store: DataStore): Promise<void> {
   await clearStaleLoggedEntries(store, DIET_MODULE_NAME);
   await clearStaleLoggedEntries(store, WATER_MODULE_NAME);
   await snapshotAndResetGoalsProgress(store);
+  for (const moduleName of TODO_LIST_MODULE_NAMES) {
+    await clearCompletedTodos(store, moduleName);
+  }
+  await clearCompletedProjectTasks(store);
+  await archiveCompletedProjects(store);
+  await clearCompletedLongTermGoals(store);
 }

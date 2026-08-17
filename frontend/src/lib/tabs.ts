@@ -1,6 +1,6 @@
 import type { ModuleAccentKey } from '@/theme/colors';
 
-export type TabKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial';
+export type TabKey = 'tasks' | 'goals' | 'health' | 'daily-goals' | 'financial' | 'projects' | 'weight';
 
 export interface TabDefinition {
   key: TabKey;
@@ -63,6 +63,24 @@ export const TAB_DEFINITIONS: readonly TabDefinition[] = [
     governingModuleNames: ['Long-Term Goals'],
     defaultInBottomNav: false,
     defaultSortOrder: 4,
+  },
+  {
+    key: 'projects',
+    label: 'Projects',
+    icon: 'briefcase-outline',
+    accent: 'projects',
+    governingModuleNames: ['Projects'],
+    defaultInBottomNav: false,
+    defaultSortOrder: 5,
+  },
+  {
+    key: 'weight',
+    label: 'Weight',
+    icon: 'trending-up-outline',
+    accent: 'weight',
+    governingModuleNames: ['Weight'],
+    defaultInBottomNav: false,
+    defaultSortOrder: 6,
   },
 ] as const;
 

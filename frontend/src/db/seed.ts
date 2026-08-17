@@ -12,6 +12,8 @@ const DEFAULT_MODULES: readonly (readonly [string, ModuleCategory])[] = [
   ['Daily Goals', 'totals'],
   ['Daily Workout', 'totals'],
   ['Savings Goals', 'totals'],
+  ['Projects', 'list'],
+  ['Weight', 'totals'],
 ];
 
 interface SeedEntry {
@@ -70,6 +72,17 @@ const DEFAULT_ENTRIES: Readonly<Record<string, readonly SeedEntry[]>> = {
     { status: 'active', payload: { title: 'Emergency Fund', target: 5000, current: 1200 } },
     { status: 'active', payload: { title: 'New Laptop', target: 1500, current: 600 } },
     { status: 'active', payload: { title: 'Vacation', target: 3000, current: 450 } },
+  ],
+  Projects: [
+    {
+      status: 'in-progress',
+      payload: {
+        kind: 'project',
+        title: 'Everything Calendar',
+        description: 'Personal calendar & habit-tracking app.',
+        notes: '',
+      },
+    },
   ],
 };
 

@@ -14,6 +14,8 @@ const MODULE_NAME_TO_ACCENT: Record<string, ModuleAccentKey> = {
   'Daily Workout': 'workout',
   'Daily Goals': 'daily-goals',
   'Savings Goals': 'financial',
+  Projects: 'projects',
+  Weight: 'weight',
 };
 
 export function getModuleAccentKey(moduleName: string): ModuleAccentKey {

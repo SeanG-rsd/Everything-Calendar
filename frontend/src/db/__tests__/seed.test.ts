@@ -2,7 +2,7 @@ import { ensureDefaultModules, ensureDefaultTabPreferences, ensureWorkoutDaySeed
 import { createMemoryStore } from '../testUtils';
 
 describe('ensureDefaultModules', () => {
-  it('creates the 8 default modules with the correct name/category pairs', async () => {
+  it('creates the 10 default modules with the correct name/category pairs', async () => {
     const store = createMemoryStore();
     await ensureDefaultModules(store);
 
@@ -16,17 +16,23 @@ describe('ensureDefaultModules', () => {
       ['Daily Goals', 'totals'],
       ['Daily Workout', 'totals'],
       ['Savings Goals', 'totals'],
+      ['Projects', 'list'],
+      ['Weight', 'totals'],
     ]);
   });
 
-  it('seeds entries for every default module', async () => {
+  it('seeds entries for every default module except Weight (intentionally empty — no fake body-weight data)', async () => {
     const store = createMemoryStore();
     await ensureDefaultModules(store);
 
     const modules = await store.listModules();
     for (const module of modules) {
       const count = await store.countEntriesForModule(module.id);
-      expect(count).toBeGreaterThan(0);
+      if (module.name === 'Weight') {
+        expect(count).toBe(0);
+      } else {
+        expect(count).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -36,7 +42,7 @@ describe('ensureDefaultModules', () => {
     await ensureDefaultModules(store);
 
     const modules = await store.listModules();
-    expect(modules).toHaveLength(8);
+    expect(modules).toHaveLength(10);
   });
 
   it('does not re-seed entries for a module the user has emptied out', async () => {
@@ -105,7 +111,7 @@ describe('ensureWorkoutDaySeeds', () => {
 });
 
 describe('ensureDefaultTabPreferences', () => {
-  it('seeds the 5 default tab preferences with the correct starting placement/order', async () => {
+  it('seeds the 7 default tab preferences with the correct starting placement/order', async () => {
     const store = createMemoryStore();
     await ensureDefaultTabPreferences(store);
 
@@ -116,6 +122,8 @@ describe('ensureDefaultTabPreferences', () => {
       ['daily-goals', true, 2],
       ['financial', true, 3],
       ['goals', false, 4],
+      ['projects', false, 5],
+      ['weight', false, 6],
     ]);
   });
 
@@ -140,6 +148,8 @@ describe('ensureDefaultTabPreferences', () => {
       ['health', false, 2],
       ['daily-goals', true, 3],
       ['financial', false, 4],
+      ['projects', false, 5],
+      ['weight', false, 6],
     ]);
   });
 
@@ -159,6 +169,8 @@ describe('ensureDefaultTabPreferences', () => {
     expect(byKey.get('health')).toMatchObject({ in_bottom_nav: true, sort_order: 1 });
     expect(byKey.get('daily-goals')).toMatchObject({ in_bottom_nav: true, sort_order: 2 });
     expect(byKey.get('financial')).toMatchObject({ in_bottom_nav: true, sort_order: 3 });
-    expect(preferences).toHaveLength(5);
+    expect(byKey.get('projects')).toMatchObject({ in_bottom_nav: false, sort_order: 5 });
+    expect(byKey.get('weight')).toMatchObject({ in_bottom_nav: false, sort_order: 6 });
+    expect(preferences).toHaveLength(7);
   });
 });

@@ -9,3 +9,9 @@ export function localDateKey(date: Date): string {
 export function isToday(isoString: string): boolean {
   return localDateKey(new Date(isoString)) === localDateKey(new Date());
 }
+
+export function isThisMonth(isoString: string): boolean {
+  const date = new Date(isoString);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}

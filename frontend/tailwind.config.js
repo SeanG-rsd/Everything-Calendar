@@ -25,6 +25,8 @@ module.exports = {
           health: { DEFAULT: '#FF9E7A', strong: '#F4784E', subtle: '#33221B' },
           'daily-goals': { DEFAULT: '#F5D67A', strong: '#E0B94A', subtle: '#332B15' },
           financial: { DEFAULT: '#8FDCA6', strong: '#4FBF77', subtle: '#17301F' },
+          projects: { DEFAULT: '#5FD4C4', strong: '#33B39E', subtle: '#173330' },
+          weight: { DEFAULT: '#F28FB5', strong: '#D9628F', subtle: '#332030' },
           diet: { DEFAULT: '#F2555A', strong: '#D6484D', subtle: '#33191C' },
           water: { DEFAULT: '#4FC3F7', strong: '#0288D1', subtle: '#122A38' },
           workout: { DEFAULT: '#F2925A', strong: '#D5814F', subtle: '#332419' },

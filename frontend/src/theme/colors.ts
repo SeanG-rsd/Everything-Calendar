@@ -28,6 +28,8 @@ export type ModuleAccentKey =
   | 'health'
   | 'daily-goals'
   | 'financial'
+  | 'projects'
+  | 'weight'
   | 'diet'
   | 'water'
   | 'workout'
@@ -39,6 +41,8 @@ export const moduleAccents: Record<ModuleAccentKey, { default: string; strong: s
   health: { default: '#FF9E7A', strong: '#F4784E', subtle: '#33221B' },
   'daily-goals': { default: '#F5D67A', strong: '#E0B94A', subtle: '#332B15' },
   financial: { default: '#8FDCA6', strong: '#4FBF77', subtle: '#17301F' },
+  projects: { default: '#5FD4C4', strong: '#33B39E', subtle: '#173330' },
+  weight: { default: '#F28FB5', strong: '#D9628F', subtle: '#332030' },
   // Each of these three matches its own third of the Health tab's weekly bar
   // (see components/ui/WeeklyHealthBar.tsx) exactly, not just "health" generically.
   diet: { default: '#F2555A', strong: '#D6484D', subtle: '#33191C' },

@@ -54,6 +54,22 @@ export const moduleClassNames: Record<ModuleAccentKey, ModuleClassSet> = {
     border: 'border-module-financial',
     borderStrong: 'border-module-financial-strong',
   },
+  projects: {
+    text: 'text-module-projects',
+    bg: 'bg-module-projects',
+    bgStrong: 'bg-module-projects-strong',
+    bgSubtle: 'bg-module-projects-subtle',
+    border: 'border-module-projects',
+    borderStrong: 'border-module-projects-strong',
+  },
+  weight: {
+    text: 'text-module-weight',
+    bg: 'bg-module-weight',
+    bgStrong: 'bg-module-weight-strong',
+    bgSubtle: 'bg-module-weight-subtle',
+    border: 'border-module-weight',
+    borderStrong: 'border-module-weight-strong',
+  },
   diet: {
     text: 'text-module-diet',
     bg: 'bg-module-diet',
