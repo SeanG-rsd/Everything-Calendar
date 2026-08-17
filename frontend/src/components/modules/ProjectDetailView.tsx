@@ -1,13 +1,15 @@
 import type { Entry } from '@/api/types';
 import { SafeAreaScreen } from '@/components/layout/SafeAreaScreen';
 import { useEntries } from '@/hooks/useEntries';
-import { formatDateDisplay } from '@/lib/date';
+import { formatDateDisplay, formatDateOnly, parseDateOnly } from '@/lib/date';
 import {
   isProjectArchived,
   PROJECT_STATUS_LABELS,
   PROJECT_STATUSES,
   projectDescription,
+  projectEndDate,
   projectNotes,
+  projectStartDate,
   projectStatus,
   projectTitle,
   tasksForProject,
@@ -20,9 +22,10 @@ import { colors } from '@/theme/colors';
 import { getModuleAccentKey } from '@/theme/moduleAccent';
 import { moduleClassNames } from '@/theme/moduleClassNames';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -69,6 +72,8 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const [editingTask, setEditingTask] = useState<Entry | null>(null);
   const [editTaskError, setEditTaskError] = useState<string | null>(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState<Entry | null>(null);
+  const [startPickerOpen, setStartPickerOpen] = useState(false);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!entry) return;
@@ -95,6 +100,36 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     } catch (err) {
       setPageError((err as Error).message ?? 'Something went wrong.');
     }
+  }
+
+  async function handleChangeStartDate(date: string | null) {
+    if (!entry) return;
+    setPageError(null);
+    try {
+      await update(entry.id, { payload: { ...entry.payload, startDate: date } });
+    } catch (err) {
+      setPageError((err as Error).message ?? 'Something went wrong.');
+    }
+  }
+
+  async function handleChangeEndDate(date: string | null) {
+    if (!entry) return;
+    setPageError(null);
+    try {
+      await update(entry.id, { payload: { ...entry.payload, endDate: date } });
+    } catch (err) {
+      setPageError((err as Error).message ?? 'Something went wrong.');
+    }
+  }
+
+  function handleStartPickerChange(event: DateTimePickerEvent, selected?: Date) {
+    if (Platform.OS === 'android') setStartPickerOpen(false);
+    if (event.type === 'set' && selected) handleChangeStartDate(formatDateOnly(selected));
+  }
+
+  function handleEndPickerChange(event: DateTimePickerEvent, selected?: Date) {
+    if (Platform.OS === 'android') setEndPickerOpen(false);
+    if (event.type === 'set' && selected) handleChangeEndDate(formatDateOnly(selected));
   }
 
   async function handleChangeStatus(status: ProjectStatus) {
@@ -208,6 +243,44 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             </View>
           </View>
 
+          <View className="flex-row gap-4">
+            <View className="flex-1 gap-2">
+              <Text className="text-sm font-medium text-ink-muted">Start date</Text>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => setStartPickerOpen(true)}
+                  className="flex-1 rounded-md border border-border bg-surface px-3 py-2">
+                  <Text className="text-sm text-ink">
+                    {projectStartDate(entry) ? formatDateDisplay(projectStartDate(entry)!) : 'Not set'}
+                  </Text>
+                </Pressable>
+                {projectStartDate(entry) && (
+                  <Button variant="secondary" onPress={() => handleChangeStartDate(null)}>
+                    Clear
+                  </Button>
+                )}
+              </View>
+            </View>
+
+            <View className="flex-1 gap-2">
+              <Text className="text-sm font-medium text-ink-muted">End date</Text>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => setEndPickerOpen(true)}
+                  className="flex-1 rounded-md border border-border bg-surface px-3 py-2">
+                  <Text className="text-sm text-ink">
+                    {projectEndDate(entry) ? formatDateDisplay(projectEndDate(entry)!) : 'Not set'}
+                  </Text>
+                </Pressable>
+                {projectEndDate(entry) && (
+                  <Button variant="secondary" onPress={() => handleChangeEndDate(null)}>
+                    Clear
+                  </Button>
+                )}
+              </View>
+            </View>
+          </View>
+
           <TextField
             label="Description"
             value={description}
@@ -299,6 +372,42 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             )}
           </View>
         </ScrollView>
+      )}
+
+      {startPickerOpen && entry && (
+        <Modal title="Start date" onClose={() => setStartPickerOpen(false)}>
+          <View className="gap-4">
+            <DateTimePicker
+              value={projectStartDate(entry) ? parseDateOnly(projectStartDate(entry)!) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              onChange={handleStartPickerChange}
+            />
+            <View className="flex-row justify-end">
+              <Button accent={accentKey} onPress={() => setStartPickerOpen(false)}>
+                Done
+              </Button>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {endPickerOpen && entry && (
+        <Modal title="End date" onClose={() => setEndPickerOpen(false)}>
+          <View className="gap-4">
+            <DateTimePicker
+              value={projectEndDate(entry) ? parseDateOnly(projectEndDate(entry)!) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              onChange={handleEndPickerChange}
+            />
+            <View className="flex-row justify-end">
+              <Button accent={accentKey} onPress={() => setEndPickerOpen(false)}>
+                Done
+              </Button>
+            </View>
+          </View>
+        </Modal>
       )}
 
       {editingTask && (

@@ -4,7 +4,9 @@ import {
   isProjectEntry,
   isProjectTaskEntry,
   projectDescription,
+  projectEndDate,
   projectNotes,
+  projectStartDate,
   projectStatus,
   projectTitle,
   taskDescription,
@@ -66,6 +68,18 @@ describe('projectStatus', () => {
   it('falls back to planning for unrecognized values, including the legacy default of active', () => {
     expect(projectStatus(makeEntry(1, {}, 'active'))).toBe('planning');
     expect(projectStatus(makeEntry(2, {}, 'archived'))).toBe('planning');
+  });
+});
+
+describe('projectStartDate / projectEndDate', () => {
+  it('reads string fields and falls back to null', () => {
+    const entry = makeEntry(1, { kind: 'project', startDate: '2026-08-01', endDate: '2026-08-31' });
+    expect(projectStartDate(entry)).toBe('2026-08-01');
+    expect(projectEndDate(entry)).toBe('2026-08-31');
+
+    const bare = makeEntry(2, { kind: 'project' });
+    expect(projectStartDate(bare)).toBeNull();
+    expect(projectEndDate(bare)).toBeNull();
   });
 });
 

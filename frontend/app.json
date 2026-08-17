@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.nutronlabs.EverythingCalendar",
       "buildNumber": "5",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "icon": "./assets/images/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

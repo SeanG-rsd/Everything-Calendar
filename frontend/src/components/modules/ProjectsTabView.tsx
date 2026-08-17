@@ -1,10 +1,13 @@
 import type { Entry } from '@/api/types';
 import { useEntries } from '@/hooks/useEntries';
+import { formatDateDisplay } from '@/lib/date';
 import {
   isProjectArchived,
   isProjectEntry,
   PROJECT_STATUS_LABELS,
   projectDescription,
+  projectEndDate,
+  projectStartDate,
   projectStatus,
   projectTitle,
   tasksForProject,
@@ -44,6 +47,16 @@ function ProjectRow({
   muted?: boolean;
 }) {
   const description = projectDescription(entry);
+  const startDate = projectStartDate(entry);
+  const endDate = projectEndDate(entry);
+  const dateRangeLabel =
+    startDate && endDate
+      ? `${formatDateDisplay(startDate)} – ${formatDateDisplay(endDate)}`
+      : startDate
+        ? `From ${formatDateDisplay(startDate)}`
+        : endDate
+          ? `Due ${formatDateDisplay(endDate)}`
+          : null;
   return (
     <Pressable
       onPress={onPress}
@@ -61,6 +74,7 @@ function ProjectRow({
               <Text className="text-xs text-ink-faint">{PROJECT_STATUS_LABELS[projectStatus(entry)]}</Text>
             </View>
             <Text className="text-xs text-ink-faint">{taskCount === 1 ? '1 task' : `${taskCount} tasks`}</Text>
+            {dateRangeLabel && <Text className="text-xs text-ink-faint">{dateRangeLabel}</Text>}
           </View>
         </View>
         <Pressable onPress={onDelete} hitSlop={8}>

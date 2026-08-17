@@ -35,6 +35,14 @@ export function projectNotes(entry: Entry): string {
   return typeof entry.payload.notes === 'string' ? entry.payload.notes : '';
 }
 
+export function projectStartDate(entry: Entry): string | null {
+  return typeof entry.payload.startDate === 'string' ? entry.payload.startDate : null;
+}
+
+export function projectEndDate(entry: Entry): string | null {
+  return typeof entry.payload.endDate === 'string' ? entry.payload.endDate : null;
+}
+
 /** Falls back to 'planning' for anything unrecognized, including pre-status-feature entries
  * (which default to the generic entries.status of 'active') and the legacy example seed row. */
 export function projectStatus(entry: Entry): ProjectStatus {
