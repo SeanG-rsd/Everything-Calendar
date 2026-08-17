@@ -2,14 +2,14 @@
   "expo": {
     "name": "Everything Calendar",
     "slug": "everything-calendar",
-    "version": "2.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "everythingcalendar",
     "userInterfaceStyle": "dark",
     "ios": {
-      "bundleIdentifier": "com.nutronlabs.EverythingCalendar",
-      "buildNumber": "5",
+      "bundleIdentifier": "com.nutronlabs.everything-calendar",
+      "buildNumber": "1",
       "supportsTablet": false,
       "icon": "./assets/images/icon.png",
       "infoPlist": {
